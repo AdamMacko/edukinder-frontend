@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import LoginModal from "./LoginModal";
 
 export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,6 +18,7 @@ export const Header = () => {
   }, []);
 
   return (
+      <>
     <header 
       className={`w-full sticky top-0 z-50 transition-all duration-500 ${
         scrolled 
@@ -66,8 +69,9 @@ export const Header = () => {
 
           {/* LOGIN BUTTON - Premium glass morphism design */}
           <div className="hidden sm:flex items-center ml-auto gap-4">
-            <Link 
-              href="/login"
+            <button
+                type="button"
+                onClick={() => setIsLoginOpen(true)}
               className="group relative flex items-center justify-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm text-white overflow-hidden transition-all duration-500 hover:shadow-lg hover:shadow-yellow-500/30"
             >
               {/* Background with custom color */}
@@ -91,7 +95,7 @@ export const Header = () => {
                   <path d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </span>
-            </Link>
+            </button>
           </div>
 
           {/* MOBILE MENU BUTTON - Animated hamburger */}
@@ -131,17 +135,22 @@ export const Header = () => {
           </nav>
 
           <div className="pt-4 border-t border-white/30 mt-2 flex flex-col gap-3">
-            <Link 
-              href="/login"
-              onClick={() => setIsMobileMenuOpen(false)}
+            <button
+                type="button"
+                onClick={() => setIsLoginOpen(true)}
               className="relative flex items-center justify-center gap-2 w-full font-semibold text-base py-3 px-6 rounded-xl text-white overflow-hidden transition-all duration-500 group"
             >
               <div className="absolute inset-0 bg-[#d0a91a] group-active:opacity-90"></div>
               <span className="relative">Prihlásenie</span>
-            </Link>
+            </button>
           </div>
         </div>
       )}
     </header>
+    <LoginModal
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+    />
+</>
   );
 };
