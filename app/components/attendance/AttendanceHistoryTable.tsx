@@ -1,8 +1,10 @@
 import { AttendanceLog, AttendanceState } from "@/app/types/attendance";
+import { SmoothTransition } from "@/app/components/SmoothTransition";
 
 type AttendanceHistoryTableProps = {
     logs: AttendanceLog[];
     dateLabel: string;
+    isLoading?: boolean; // Pridaný prop pre stav načítavania
 };
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -28,6 +30,7 @@ function getStatusLabel(status: AttendanceState) {
 export function AttendanceHistoryTable({
                                            logs,
                                            dateLabel,
+                                           isLoading = false, // Prijímame isLoading s predvolenou hodnotou
                                        }: AttendanceHistoryTableProps) {
     return (
         <div className="border-t border-[#3E2E48]/8 bg-white px-6 py-6 sm:px-8">
@@ -44,7 +47,11 @@ export function AttendanceHistoryTable({
                 </div>
             </div>
 
-            <div className="overflow-hidden rounded-[24px] border border-[#3E2E48]/8 bg-[#fcfaf8]">
+            {/* Obalili sme celú oblasť s tabuľkou (alebo empty state-om) do SmoothTransition */}
+            <SmoothTransition 
+                isLoading={isLoading} 
+                className="overflow-hidden rounded-[24px] border border-[#3E2E48]/8 bg-[#fcfaf8]"
+            >
                 <div className="overflow-x-auto">
                     {logs.length === 0 ? (
                         <div className="px-4 py-4 text-sm text-[#3E2E48]/70">
@@ -81,7 +88,7 @@ export function AttendanceHistoryTable({
                         </table>
                     )}
                 </div>
-            </div>
+            </SmoothTransition>
         </div>
     );
 }

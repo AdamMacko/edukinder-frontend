@@ -316,7 +316,7 @@ export default function LunchCheckoutPage() {
     return (
         <>
 
-
+            <Header />
             <div className="min-h-screen bg-[#fcf7f3] text-[#3E2E48]">
                 <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                     <div className="overflow-hidden rounded-[32px] border border-white/70 bg-white/70 shadow-[0_20px_60px_rgba(62,46,72,0.08)] backdrop-blur-xl">

@@ -1,3 +1,5 @@
+import { SmoothTransition } from "@/app/components/SmoothTransition";
+
 type AttendanceToolbarProps = {
     groupName: string | null;
     presentCount: number;
@@ -6,6 +8,7 @@ type AttendanceToolbarProps = {
     dayLabel: string;
     onPrevDay: () => void;
     onNextDay: () => void;
+    isLoading?: boolean; // Pridaný prop pre stav načítavania
 };
 
 function SummaryCard({
@@ -31,6 +34,7 @@ export function AttendanceToolbar({
                                       dayLabel,
                                       onPrevDay,
                                       onNextDay,
+                                      isLoading = false, // Prijímame isLoading s predvolenou hodnotou
                                   }: AttendanceToolbarProps) {
     return (
         <>
@@ -50,12 +54,16 @@ export function AttendanceToolbar({
           </span>
                 </div>
 
-                <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+                {/* Štatistiky obalené v SmoothTransition */}
+                <SmoothTransition 
+                    isLoading={isLoading} 
+                    className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4"
+                >
                     <SummaryCard label="Trieda" value={groupName ?? "-"} />
                     <SummaryCard label="Prítomní" value={String(presentCount)} />
                     <SummaryCard label="Neprítomní" value={String(absentCount)} />
                     <SummaryCard label="Chorí" value={String(sickCount)} />
-                </div>
+                </SmoothTransition>
             </div>
 
             <div className="px-6 py-6 sm:px-8 sm:py-8">

@@ -1,9 +1,11 @@
 import { AttendanceState, Child } from "@/app/types/attendance";
+import { SmoothTransition } from "@/app/components/SmoothTransition";
 
 type AttendanceGridProps = {
     childrenList: Child[];
     attendance: Record<string, AttendanceState>;
     onToggleStatus: (childId: number) => void;
+    isLoading?: boolean; // Pridaný prop pre stav načítavania
 };
 
 function getStatusLabel(status: AttendanceState) {
@@ -43,10 +45,15 @@ export function AttendanceGrid({
                                    childrenList,
                                    attendance,
                                    onToggleStatus,
+                                   isLoading = false, // Prijímame isLoading s predvolenou hodnotou
                                }: AttendanceGridProps) {
     return (
         <div className="px-6 pb-6 sm:px-8 sm:pb-8">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            {/* Nahradili sme pôvodný div komponentom SmoothTransition */}
+            <SmoothTransition 
+                isLoading={isLoading} 
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5"
+            >
                 {childrenList.map((child) => {
                     const state = attendance[String(child.id)] ?? "PRESENT";
 
@@ -80,7 +87,7 @@ export function AttendanceGrid({
                         </button>
                     );
                 })}
-            </div>
+            </SmoothTransition>
         </div>
     );
 }

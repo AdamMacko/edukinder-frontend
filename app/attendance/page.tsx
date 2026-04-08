@@ -1,5 +1,5 @@
 "use client";
-
+import { Header } from '../components/Header';
 import { useEffect, useMemo, useState } from "react";
 import { AttendanceHeader } from "../components/attendance/AttendanceHeader";
 import { AttendanceToolbar } from "../components/attendance/AttendanceToolbar";
@@ -169,7 +169,8 @@ export default function AttendancePage() {
 
     return (
         <>
-
+        
+        <Header />
             <div className="min-h-screen bg-[#fcf7f3] text-[#3E2E48]">
                 <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                     <div className="overflow-hidden rounded-[32px] border border-white/70 bg-white/70 shadow-[0_20px_60px_rgba(62,46,72,0.08)] backdrop-blur-xl">
@@ -178,17 +179,18 @@ export default function AttendancePage() {
                             onCreateReport={handleCreateMonthlyReport}
                             reportLoading={reportLoading}
                             disabled={!childrenList.length}
+                            isLoading={loading}
                         />
 
                         {error ? (
                             <div className="px-6 py-8 text-[#b15252] sm:px-8">{error}</div>
-                        ) : loading ? (
-                            <div className="px-6 py-8 sm:px-8">Načítavam dochádzku…</div>
-                        ) : !childrenList.length ? (
+                        ) : !childrenList.length && !loading ? (
+                            // Pridaná podmienka !loading zabezpečí, že toto nepreblikne pri prvom načítaní dát
                             <div className="px-6 py-8 sm:px-8">
                                 Nemáte priradenú žiadnu triedu alebo deti.
                             </div>
                         ) : (
+                            // Ak máme dáta (alebo sa práve načítavajú pre iný deň), vykreslíme komponenty a pošleme im stav
                             <>
                                 <AttendanceToolbar
                                     groupName={groupName}
@@ -198,15 +200,21 @@ export default function AttendancePage() {
                                     dayLabel={dayLabel}
                                     onPrevDay={() => changeDay(-1)}
                                     onNextDay={() => changeDay(1)}
+                                    isLoading={loading}
                                 />
 
                                 <AttendanceGrid
                                     childrenList={childrenList}
                                     attendance={attendance}
                                     onToggleStatus={handleToggleStatus}
+                                    isLoading={loading}
                                 />
 
-                                <AttendanceHistoryTable logs={logs} dateLabel={dateKey} />
+                                <AttendanceHistoryTable
+                                    logs={logs}
+                                    dateLabel={dateKey}
+                                    isLoading={loading}
+                                />
                             </>
                         )}
                     </div>
