@@ -95,7 +95,7 @@ export const Header = () => {
                 </Link>
 
                 <Link 
-                  href="#strava" 
+                  href="/lunch-checkout"
                   className="group relative px-5 py-2.5 rounded-full font-bold text-sm text-[#3E2E48]/80 overflow-hidden transition-all duration-300 hover:text-[#d0a91a] hover:shadow-md"
                 >
                   <div className="absolute inset-0 bg-white/50 backdrop-blur-md border border-white/80 rounded-full transition-all duration-300 group-hover:bg-white/80 group-hover:border-[#d0a91a]/30"></div>
@@ -104,6 +104,16 @@ export const Header = () => {
                     Strava
                   </span>
                 </Link>
+                  <Link
+                      href="/attendance"
+                      className="group relative px-5 py-2.5 rounded-full font-bold text-sm text-[#3E2E48]/80 overflow-hidden transition-all duration-300 hover:text-[#d0a91a] hover:shadow-md"
+                  >
+                      <div className="absolute inset-0 bg-white/50 backdrop-blur-md border border-white/80 rounded-full transition-all duration-300 group-hover:bg-white/80 group-hover:border-[#d0a91a]/30"></div>
+                      <span className="relative flex items-center justify-start gap-2">
+                    <Utensils className="w-4 h-4 transition-colors duration-300" strokeWidth={2.5} />
+                    Dochádzka
+                  </span>
+                  </Link>
               </nav>
             </div>
 
@@ -197,7 +207,7 @@ export const Header = () => {
               </Link>
 
               <Link 
-                href="#strava" 
+                href="/lunch-checkout"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="group relative flex items-center justify-start gap-3 px-6 py-4 rounded-2xl font-bold text-base text-[#3E2E48] overflow-hidden transition-all duration-300 hover:shadow-md hover:text-[#d0a91a]"
               >
