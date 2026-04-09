@@ -1,24 +1,83 @@
 "use client";
 
-import { Header } from '../components/Header';
-import Link from "next/link";
+import { Header } from "@/app/components/Header";
 import { useEffect, useMemo, useState } from "react";
-import { MealsHeader } from "../components/meals/MealsHeader";
-import { ChildTabs } from "../components/meals/ChildTabs";
-import { CalendarGrid } from "../components/meals/CalendarGrid";
-import { EditMealsModal } from "../components/meals/EditMealsModal";
+import { MealsSubnav } from "@/app/components/meals/MealsSubnav";
+import { MealsHeader } from "@/app/components/meals/MealsHeader";
+import { ChildTabs } from "@/app/components/meals/ChildTabs";
+import { CalendarGrid } from "@/app/components/meals/CalendarGrid";
+import { EditMealsModal } from "@/app/components/meals/EditMealsModal";
+import { PaymentsTabs } from "@/app/components/meals/PaymentsTabs";
+import { StatementsSection } from "@/app/components/meals/StatementsSection";
+import { PaymentsHistorySection } from "@/app/components/meals/PaymentsHistorySection";
+import { PaymentQrModal } from "@/app/components/meals/PaymentQrModal";
+import {
+    getMealsAttendance,
+    getMyChildren,
+    saveMealsAttendance,
+    type Meals,
+    type CourseKey,
+} from "@/lib/api/meals";
+import {
+    getMyMealStatements,
+    getMyMealsPayments,
+    type MealStatementStatus,
+} from "@/lib/api/payments";
 
-type CourseKey = "snack_am" | "lunch" | "snack_pm" | "full_day";
-type Meals = Record<CourseKey, boolean>;
+type MainTab = "CANCELLATION" | "PAYMENTS" | "OVERVIEW";
+
 type Child = { id: string; name: string; color: string };
 
+type ChildStatements = {
+    childId: number;
+    childName: string;
+    items: {
+        id: number;
+        month: string;
+        plannedDays: number;
+        mealsAmount: number;
+        carryOverIn: number;
+        totalToPay: number;
+        carryOverOut: number;
+        status: MealStatementStatus;
+        qrPayload?: string | null;
+        paymentDetails?: {
+            recipientName: string;
+            iban: string;
+            vs: string;
+            amount: number;
+            note: string;
+        };
+    }[];
+};
 
-const MY_CHILDREN_URL = "/api/child/mine";
+type ChildMealsPayments = {
+    childId: number;
+    childName: string;
+    records: {
+        id: number;
+        paidAt: string;
+        amount: number;
+    }[];
+};
+
+type QrModalState = {
+    open: boolean;
+    childName: string;
+    qrValue: string;
+    details?: {
+        recipientName: string;
+        iban: string;
+        vs: string;
+        amount: number;
+        note: string;
+    };
+};
 
 const WEEKDAYS = ["Pondelok", "Utorok", "Streda", "Štvrtok", "Piatok"];
 const MONTHS_SK = [
     "Január", "Február", "Marec", "Apríl", "Máj", "Jún",
-    "Júl", "August", "September", "Október", "November", "December"
+    "Júl", "August", "September", "Október", "November", "December",
 ];
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -92,8 +151,19 @@ const allTrue = (): Meals => ({
 
 const cloneMeals = (m?: Meals): Meals => (m ? { ...m } : allTrue());
 
-export default function LunchCheckoutPage() {
+function schoolYearLabelFromIso(iso: string): string {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "Neznámy";
+    const y = d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1;
+    return `${y}/${y + 1}`;
+}
+
+export default function MealsPage() {
     const now = new Date();
+
+    const [activeMainTab, setActiveMainTab] =
+        useState<MainTab>("CANCELLATION");
+
 
     const [childrenList, setChildrenList] = useState<Child[]>([]);
     const [childrenLoading, setChildrenLoading] = useState(true);
@@ -103,6 +173,7 @@ export default function LunchCheckoutPage() {
     const [activeChildId, setActiveChildId] = useState<string | null>(null);
 
     const [data, setData] = useState<Record<string, Record<string, Meals>>>({});
+    const [saveError, setSaveError] = useState<string | null>(null);
 
     const [dialog, setDialog] = useState<{
         open: boolean;
@@ -114,31 +185,30 @@ export default function LunchCheckoutPage() {
         edit: null,
     });
 
+    const [statements, setStatements] = useState<ChildStatements[]>([]);
+    const [statementsLoading, setStatementsLoading] = useState(false);
+    const [statementsError, setStatementsError] = useState<string | null>(null);
+
+    const [mealsPayments, setMealsPayments] = useState<ChildMealsPayments[]>([]);
+    const [paymentsLoading, setPaymentsLoading] = useState(false);
+    const [paymentsError, setPaymentsError] = useState<string | null>(null);
+
+    const [qrModal, setQrModal] = useState<QrModalState>({
+        open: false,
+        childName: "",
+        qrValue: "",
+        details: undefined,
+    });
+
+    const [syIndex, setSyIndex] = useState(0);
+
     useEffect(() => {
         const loadChildren = async () => {
             try {
                 setChildrenLoading(true);
                 setChildrenError(null);
 
-                const res = await fetch(MY_CHILDREN_URL, {
-                    credentials: "include",
-                });
-
-                if (!res.ok) {
-                    throw new Error(`HTTP ${res.status}`);
-                }
-
-                const json = await res.json();
-
-                if (!json.success) {
-                    throw new Error(json.error || "Nepodarilo sa načítať deti");
-                }
-
-                const apiChildren = json.data as {
-                    id: number;
-                    firstName: string;
-                    lastName: string;
-                }[];
+                const apiChildren = await getMyChildren();
 
                 const palette = ["bg-[#6c8ef5]", "bg-[#5aa6a6]", "bg-[#d0a91a]", "bg-[#c77dff]"];
 
@@ -151,7 +221,7 @@ export default function LunchCheckoutPage() {
                 setChildrenList(mapped);
                 setActiveChildId(mapped[0]?.id ?? null);
             } catch (err) {
-                console.error("Failed to load children", err);
+                console.error(err);
                 setChildrenError("Nepodarilo sa načítať deti.");
             } finally {
                 setChildrenLoading(false);
@@ -167,30 +237,13 @@ export default function LunchCheckoutPage() {
         const from = new Date(ym.y, ym.m, 1);
         const to = new Date(ym.y, ym.m + 1, 0);
 
-        const fromKey = keyOf(from);
-        const toKey = keyOf(to);
-        const childIds = childrenList.map((c) => c.id).join(",");
-
-        const url = `/api/meals/attendance?from=${fromKey}&to=${toKey}&childIds=${encodeURIComponent(childIds)}`;
-
-
         const loadAttendance = async () => {
             try {
-                const res = await fetch(url, {
-                    credentials: "include",
+                const serverData = await getMealsAttendance({
+                    from: keyOf(from),
+                    to: keyOf(to),
+                    childIds: childrenList.map((c) => c.id).join(","),
                 });
-
-                if (!res.ok) {
-                    throw new Error(`HTTP ${res.status}`);
-                }
-
-                const json = await res.json();
-
-                if (!json.success) {
-                    throw new Error(json.error || "Nepodarilo sa načítať dochádzku");
-                }
-
-                const serverData = json.data as Record<string, Record<string, Meals>>;
 
                 const normalized: Record<string, Record<string, Meals>> = {};
 
@@ -213,15 +266,156 @@ export default function LunchCheckoutPage() {
 
                 setData(normalized);
             } catch (err) {
-                console.error("Failed to load attendance", err);
+                console.error(err);
             }
         };
 
         loadAttendance();
     }, [ym, childrenList]);
 
+    useEffect(() => {
+        if (activeMainTab !== "PAYMENTS") return;
+
+        let alive = true;
+
+        (async () => {
+            try {
+                setStatementsLoading(true);
+                setStatementsError(null);
+
+                const raw = await getMyMealStatements();
+
+                const byChild = new Map<number, ChildStatements>();
+
+                for (const s of raw) {
+                    if (!byChild.has(s.childId)) {
+                        byChild.set(s.childId, {
+                            childId: s.childId,
+                            childName: s.childName,
+                            items: [],
+                        });
+                    }
+
+                    const bucket = byChild.get(s.childId)!;
+                    bucket.items.push({
+                        id: s.id,
+                        month: s.month,
+                        plannedDays: s.plannedDays,
+                        mealsAmount: Number(s.mealsAmount ?? 0),
+                        carryOverIn: Number(s.carryOverIn ?? 0),
+                        totalToPay: Number(s.totalToPay ?? 0),
+                        carryOverOut: Number(s.carryOverOut ?? 0),
+                        status: s.status,
+                        qrPayload: s.qrPayload ?? undefined,
+                        paymentDetails: s.paymentDetails,
+                    });
+                }
+
+                for (const child of byChild.values()) {
+                    child.items.sort((a, b) => {
+                        const da = new Date(a.month).getTime();
+                        const db = new Date(b.month).getTime();
+                        return db - da;
+                    });
+                }
+
+                if (alive) setStatements(Array.from(byChild.values()));
+            } catch (err: unknown) {
+                console.error(err);
+                if (alive) {
+                    setStatementsError(
+                        err instanceof Error
+                            ? err.message
+                            : "Nepodarilo sa načítať mesačné predpisy za stravu."
+                    );
+                }
+            } finally {
+                if (alive) setStatementsLoading(false);
+            }
+        })();
+
+        return () => {
+            alive = false;
+        };
+    }, [activeMainTab]);
+
+    useEffect(() => {
+        if (activeMainTab !== "PAYMENTS") return;
+
+        let alive = true;
+
+        (async () => {
+            try {
+                setPaymentsLoading(true);
+                setPaymentsError(null);
+
+                const raw = await getMyMealsPayments();
+
+                const byChild = new Map<number, ChildMealsPayments>();
+
+                for (const p of raw) {
+                    if (!byChild.has(p.childId)) {
+                        byChild.set(p.childId, {
+                            childId: p.childId,
+                            childName: p.childName,
+                            records: [],
+                        });
+                    }
+
+                    const bucket = byChild.get(p.childId)!;
+                    bucket.records.push({
+                        id: p.id,
+                        paidAt: p.paidAt,
+                        amount: Number(p.amount ?? 0),
+                    });
+                }
+
+                if (alive) setMealsPayments(Array.from(byChild.values()));
+            } catch (err: unknown) {
+                console.error(err);
+                if (alive) {
+                    setPaymentsError(
+                        err instanceof Error
+                            ? err.message
+                            : "Nepodarilo sa načítať platby za stravu."
+                    );
+                }
+            } finally {
+                if (alive) setPaymentsLoading(false);
+            }
+        })();
+
+        return () => {
+            alive = false;
+        };
+    }, [activeMainTab]);
+
     const weeks = useMemo(() => buildWeeks(ym.y, ym.m), [ym]);
     const activeChild = childrenList.find((c) => c.id === activeChildId) ?? null;
+
+    const schoolYears = useMemo(() => {
+        const set = new Set<string>();
+
+        for (const child of statements) {
+            for (const it of child.items) {
+                set.add(schoolYearLabelFromIso(it.month));
+            }
+        }
+
+        for (const child of mealsPayments) {
+            for (const r of child.records) {
+                set.add(schoolYearLabelFromIso(r.paidAt));
+            }
+        }
+
+        return Array.from(set).sort((a, b) => b.localeCompare(a));
+    }, [statements, mealsPayments]);
+
+    useEffect(() => {
+        if (schoolYears.length > 0) setSyIndex(0);
+    }, [schoolYears]);
+
+    const activeSY = schoolYears[syIndex] ?? null;
 
     const prevMonth = () =>
         setYM((p) => (p.m === 0 ? { y: p.y - 1, m: 11 } : { y: p.y, m: p.m - 1 }));
@@ -270,6 +464,7 @@ export default function LunchCheckoutPage() {
         if (!dialog.date || !dialog.edit || !childrenList.length) return;
 
         const dateKey = keyOf(dialog.date);
+        setSaveError(null);
 
         setData((prev) => {
             const out: Record<string, Record<string, Meals>> = { ...prev };
@@ -286,7 +481,7 @@ export default function LunchCheckoutPage() {
         });
 
         try {
-            const body = {
+            await saveMealsAttendance({
                 date: dateKey,
                 entries: childrenList.map((c) => ({
                     childId: Number(c.id),
@@ -296,18 +491,10 @@ export default function LunchCheckoutPage() {
                         snack_pm: dialog.edit![c.id].snack_pm,
                     },
                 })),
-            };
-
-            await fetch("/api/meals/attendance", {
-                method: "POST",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(body),
             });
         } catch (err) {
-            console.error("Failed to save attendance", err);
+            console.error(err);
+            setSaveError("Nepodarilo sa uložiť zmeny.");
         }
 
         closeDialog();
@@ -315,45 +502,145 @@ export default function LunchCheckoutPage() {
 
     return (
         <>
-
             <Header />
+
             <div className="min-h-screen bg-[#fcf7f3] text-[#3E2E48]">
                 <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                    <div className="overflow-hidden rounded-[32px] border border-white/70 bg-white/70 shadow-[0_20px_60px_rgba(62,46,72,0.08)] backdrop-blur-xl">
-                        <MealsHeader title="Odhlasovanie stravy" />
+                    <MealsSubnav active={activeMainTab} onChange={setActiveMainTab} />
 
-                        {childrenLoading ? (
-                            <div className="px-6 py-8 sm:px-8">Načítavam deti…</div>
-                        ) : childrenError ? (
-                            <div className="px-6 py-8 sm:px-8 text-[#b15252]">
-                                {childrenError}
-                            </div>
-                        ) : !childrenList.length ? (
-                            <div className="px-6 py-8 sm:px-8">
-                                Tomuto účtu zatiaľ nie sú priradené žiadne deti.
-                            </div>
-                        ) : (
-                            <>
-                                <ChildTabs
-                                    childrenList={childrenList}
-                                    activeChildId={activeChildId ?? ""}
-                                    onChange={setActiveChildId}
-                                />
+                    {activeMainTab === "CANCELLATION" && (
+                        <div className="overflow-hidden rounded-[32px] border border-white/70 bg-white/70 shadow-[0_20px_60px_rgba(62,46,72,0.08)] backdrop-blur-xl">
+                            <MealsHeader title="Odhlasovanie stravy" />
 
-                                <CalendarGrid
-                                    weeks={weeks}
-                                    weekdays={WEEKDAYS}
-                                    activeChildId={activeChildId ?? ""}
-                                    activeChildName={activeChild?.name}
-                                    data={data}
-                                    monthLabel={`${MONTHS_SK[ym.m]} ${ym.y}`}
-                                    onPrevMonth={prevMonth}
-                                    onNextMonth={nextMonth}
-                                    onOpenDay={openDialog}
-                                />
-                            </>
-                        )}
-                    </div>
+                            {childrenLoading ? (
+                                <div className="px-6 py-8 sm:px-8">Načítavam deti…</div>
+                            ) : childrenError ? (
+                                <div className="px-6 py-8 sm:px-8 text-[#b15252]">
+                                    {childrenError}
+                                </div>
+                            ) : !childrenList.length ? (
+                                <div className="px-6 py-8 sm:px-8">
+                                    Tomuto účtu zatiaľ nie sú priradené žiadne deti.
+                                </div>
+                            ) : (
+                                <>
+                                    <ChildTabs
+                                        childrenList={childrenList}
+                                        activeChildId={activeChildId ?? ""}
+                                        onChange={setActiveChildId}
+                                    />
+
+                                    <CalendarGrid
+                                        weeks={weeks}
+                                        weekdays={WEEKDAYS}
+                                        activeChildId={activeChildId ?? ""}
+                                        activeChildName={activeChild?.name}
+                                        data={data}
+                                        monthLabel={`${MONTHS_SK[ym.m]} ${ym.y}`}
+                                        onPrevMonth={prevMonth}
+                                        onNextMonth={nextMonth}
+                                        onOpenDay={openDialog}
+                                    />
+                                </>
+                            )}
+
+                            {saveError && (
+                                <div className="px-6 pb-6 text-sm font-medium text-[#b15252] sm:px-8">
+                                    {saveError}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {activeMainTab === "PAYMENTS" && (
+                        <div className="overflow-hidden rounded-[32px] border border-white/70 bg-white/70 shadow-[0_20px_60px_rgba(62,46,72,0.08)] backdrop-blur-xl">
+                            <MealsHeader title="Platby za stravu" />
+
+                            {activeSY && (
+                                <div className="px-6 pt-6 sm:px-8">
+                                    <div className="mb-4 flex justify-end">
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                type="button"
+                                                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#3E2E48]/10 bg-white text-lg shadow-sm transition hover:bg-[#faf7f4]"
+                                                onClick={() => setSyIndex((i) => Math.max(i - 1, 0))}
+                                            >
+                                                ‹
+                                            </button>
+                                            <div className="rounded-2xl bg-[#f8f5f2] px-4 py-2 font-bold shadow-inner">
+                                                {activeSY}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#3E2E48]/10 bg-white text-lg shadow-sm transition hover:bg-[#faf7f4]"
+                                                onClick={() =>
+                                                    setSyIndex((i) => Math.min(i + 1, schoolYears.length - 1))
+                                                }
+                                            >
+                                                ›
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <StatementsSection
+                                statements={statements}
+                                loading={statementsLoading}
+                                error={statementsError}
+                                activeSchoolYear={activeSY}
+                                onOpenQr={(childName, qrValue, details) =>
+                                    setQrModal({
+                                        open: true,
+                                        childName,
+                                        qrValue,
+                                        details,
+                                    })
+                                }
+                            />
+                        </div>
+                    )}
+
+                    {activeMainTab === "OVERVIEW" && (
+                        <div className="overflow-hidden rounded-[32px] border border-white/70 bg-white/70 shadow-[0_20px_60px_rgba(62,46,72,0.08)] backdrop-blur-xl">
+                            <MealsHeader title="Prehľad platieb" />
+
+                            {activeSY && (
+                                <div className="px-6 pt-6 sm:px-8">
+                                    <div className="mb-4 flex justify-end">
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                type="button"
+                                                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#3E2E48]/10 bg-white text-lg shadow-sm transition hover:bg-[#faf7f4]"
+                                                onClick={() => setSyIndex((i) => Math.max(i - 1, 0))}
+                                            >
+                                                ‹
+                                            </button>
+                                            <div className="rounded-2xl bg-[#f8f5f2] px-4 py-2 font-bold shadow-inner">
+                                                {activeSY}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#3E2E48]/10 bg-white text-lg shadow-sm transition hover:bg-[#faf7f4]"
+                                                onClick={() =>
+                                                    setSyIndex((i) => Math.min(i + 1, schoolYears.length - 1))
+                                                }
+                                            >
+                                                ›
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <PaymentsHistorySection
+                                payments={mealsPayments}
+                                loading={paymentsLoading}
+                                error={paymentsError}
+                                activeSchoolYear={activeSY}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <EditMealsModal
@@ -366,6 +653,21 @@ export default function LunchCheckoutPage() {
                     onClose={closeDialog}
                     onSave={saveDialog}
                     onToggle={onToggle}
+                />
+
+                <PaymentQrModal
+                    open={qrModal.open}
+                    childName={qrModal.childName}
+                    qrValue={qrModal.qrValue}
+                    details={qrModal.details}
+                    onClose={() =>
+                        setQrModal({
+                            open: false,
+                            childName: "",
+                            qrValue: "",
+                            details: undefined,
+                        })
+                    }
                 />
             </div>
         </>

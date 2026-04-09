@@ -74,12 +74,19 @@ export default function AttendancePage() {
     }, [selectedDate]);
 
     const counts = useMemo(() => {
-        return {
-            present: Object.values(attendance).filter((s) => s === "PRESENT").length,
-            absent: Object.values(attendance).filter((s) => s === "ABSENT").length,
-            sick: Object.values(attendance).filter((s) => s === "SICK").length,
-        };
-    }, [attendance]);
+        return childrenList.reduce(
+            (acc, child) => {
+                const state = attendance[String(child.id)] ?? "PRESENT";
+
+                if (state === "PRESENT") acc.present += 1;
+                if (state === "ABSENT") acc.absent += 1;
+                if (state === "SICK") acc.sick += 1;
+
+                return acc;
+            },
+            { present: 0, absent: 0, sick: 0 }
+        );
+    }, [childrenList, attendance]);
 
     const changeDay = (step: number) => {
         setSelectedDate((prev) => {
