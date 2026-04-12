@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
-import { Header } from "@/app/components/Header";
+import { Header } from "@/app/components/header/Header";
 import { ParentCard } from "../components/parents/ParentCard";
 import { Search, UserPlus, ArrowUpDown } from "lucide-react";
 import { MOCK_PARENTS } from "./mockData"; // Import statických dát

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Header } from "@/app/components/Header";
+import { Header } from "@/app/components/header/Header";
 import { ChatSidebar } from "@/app/components/chat/ChatSidebar";
 import { ChatArea } from "@/app/components/chat/ChatArea";
 import { NewMessageModal } from "@/app/components/chat/NewMessageModal";

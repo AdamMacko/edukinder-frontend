@@ -1,5 +1,5 @@
 "use client";
-import { Header } from '../components/Header';
+import { Header } from "@/app/components/header/Header";
 import { useEffect, useMemo, useState } from "react";
 import { AttendanceHeader } from "../components/attendance/AttendanceHeader";
 import { AttendanceToolbar } from "../components/attendance/AttendanceToolbar";

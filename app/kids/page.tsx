@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Header } from "../components/Header";
+import { Header } from "@/app/components/header/Header";
 import { MOCK_CLASSES, MOCK_CHILDREN, MOCK_TEACHERS } from "./mockData";
 import { ClassTabs } from "../components/kids/ClassTabs";
 import { ClassInfoCard } from "../components/kids/ClassInfoCard";

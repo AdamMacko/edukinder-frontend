@@ -1,64 +1,73 @@
-import { Header } from './components/Header';
+"use client";
+
+import { Header } from "@/app/components/header/Header";
+import { BellRing, Clock, Phone, Coffee, Utensils, Apple, CalendarDays } from 'lucide-react';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-[#fdf4ef] flex flex-col font-sans text-[#3E2E48] selection:bg-[#d0a91a] selection:text-[#fdf4ef]">
+    <div className="min-h-screen bg-[#fcf7f3] flex flex-col font-sans text-[#3E2E48] selection:bg-[#d0a91a] selection:text-white">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto px-6 lg:px-12 py-16 md:py-24 w-full">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-6 lg:px-8 py-12 md:py-20">
         
-        {/* HLAVIČKA NÁSTENKY – enhanced visibility */}
-        <div className="mb-20 max-w-4xl border-l-4 border-[#d0a91a] pl-8 py-2">
-          <h1 className="text-6xl md:text-7xl font-extrabold tracking-[-2px] text-[#3E2E48] leading-none">
-            MŠ Malí Objavitelia
-            <span className="text-[#d0a91a]">.</span>
+        {/* HLAVIČKA NÁSTENKY */}
+        <div className="mb-16 max-w-3xl border-l-4 border-[#d0a91a] pl-6 md:pl-8 py-2 animate-in fade-in slide-in-from-left-4 duration-700">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-[#3E2E48] leading-tight">
+            MŠ Malí Objavitelia<span className="text-[#d0a91a]">.</span>
           </h1>
-          <p className="mt-8 text-[#3E2E48] text-2xl leading-relaxed max-w-2xl font-light">
+          <p className="mt-6 text-[#3E2E48]/80 text-lg md:text-xl leading-relaxed font-medium">
             Vitajte na vašom modernom informačnom portáli. Všetky dôležité oznamy a aktuálny jedálniček pre vaše deti nájdete prehľadne a bezpečne na jednom mieste.
           </p>
         </div>
 
-        {/* INFORMAČNÝ DASHBOARD – more prominent cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
+        {/* INFORMAČNÝ DASHBOARD */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-24">
           
-          {/* Karta: Hlavný oznam – bigger, warmer, stronger presence */}
-          <div className="md:col-span-2 bg-white border border-[#3E2E48]/10 rounded-3xl p-10 shadow-xl shadow-[#3E2E48]/5 transition-all hover:shadow-2xl hover:border-[#d0a91a]/30">
-            <h2 className="font-bold text-3xl mb-8 flex items-center gap-4 text-[#3E2E48]">
-              <span className="text-[#d0a91a]">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-              </span>
-              Aktuálny Oznam
-            </h2>
-            <p className="text-[#3E2E48] text-xl leading-relaxed font-light">
-              Vážení rodičia, pripomíname, že tento štvrtok sa uskutoční spoločné jarné fotenie detí v záhrade. Prosíme, aby ste deťom pribalili aj náhradné oblečenie v pestrých farbách.
-            </p>
-            <div className="mt-10 pt-8 border-t border-[#3E2E48]/10 text-sm flex items-center justify-between text-[#3E2E48]/70 font-medium">
+          {/* Karta: Hlavný oznam */}
+          <div className="lg:col-span-2 bg-white rounded-[32px] p-8 md:p-10 border border-[#3E2E48]/5 shadow-[0_8px_30px_rgba(62,46,72,0.04)] transition-all duration-300 hover:shadow-[0_12px_40px_rgba(62,46,72,0.08)] hover:-translate-y-1 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 bg-[#fffaf0] rounded-2xl text-[#d0a91a]">
+                  <BellRing className="w-6 h-6" strokeWidth={2.5} />
+                </div>
+                <h2 className="font-black text-2xl md:text-3xl text-[#3E2E48] tracking-tight">
+                  Aktuálny Oznam
+                </h2>
+              </div>
+              <p className="text-[#3E2E48]/80 text-base md:text-lg leading-relaxed font-medium">
+                Vážení rodičia, pripomíname, že tento piatok sa uskutoční spoločné jarné fotenie detí v záhrade. Prosíme, aby ste deťom pribalili aj náhradné oblečenie v pestrých farbách.
+              </p>
+            </div>
+            
+            <div className="mt-10 pt-6 border-t border-[#3E2E48]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-sm font-bold text-[#3E2E48]/50">
               <span>Pridané dnes o 08:30</span>
-              <span className="px-4 py-1 bg-[#d0a91a]/10 text-[#d0a91a] rounded-2xl text-xs font-semibold">Riaditeľka</span>
+              <span className="inline-flex items-center justify-center px-4 py-2 bg-[#fcf7f3] text-[#d0a91a] rounded-xl text-xs uppercase tracking-wider">
+                Vedenie MŠ
+              </span>
             </div>
           </div>
 
-          {/* Karta: Kontakt – cleaner and more visible */}
-          <div className="bg-white rounded-3xl p-10 border border-[#3E2E48]/10 shadow-xl shadow-[#3E2E48]/5 transition-all hover:shadow-2xl hover:border-[#d0a91a]/30 flex flex-col">
-            <h2 className="font-bold text-3xl mb-8 flex items-center gap-4 text-[#3E2E48]">
-              <span className="text-[#d0a91a]">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-              </span>
+          {/* Karta: Kontakt (Zlatý akcent) */}
+          <div className="bg-gradient-to-br from-[#d0a91a] to-[#e2c26a] rounded-[32px] p-8 md:p-10 shadow-[0_12px_30px_rgba(208,169,26,0.2)] transition-all duration-300 hover:shadow-[0_16px_40px_rgba(208,169,26,0.3)] hover:-translate-y-1 flex flex-col text-white">
+            <h2 className="font-black text-2xl md:text-3xl mb-8 tracking-tight">
               Kancelária
             </h2>
             
-            <div className="flex-1 space-y-8">
+            <div className="flex-1 flex flex-col justify-center space-y-8">
               <div>
-                <span className="block text-xs text-[#3E2E48]/60 font-semibold mb-2 tracking-widest uppercase">Otváracie hodiny</span>
-                <span className="font-semibold text-2xl text-[#3E2E48]">7:00 – 16:30</span>
+                <span className="flex items-center gap-2 text-xs text-white/80 font-bold mb-2 tracking-widest uppercase">
+                  <Clock className="w-4 h-4" /> Otváracie hodiny
+                </span>
+                <span className="font-black text-2xl tracking-tight">7:00 – 16:30</span>
               </div>
+              
+              <div className="w-12 h-px bg-white/20"></div>
+
               <div>
-                <span className="block text-xs text-[#3E2E48]/60 font-semibold mb-2 tracking-widest uppercase">Telefón</span>
-                <a href="tel:+421900000000" className="font-semibold text-2xl text-[#3E2E48] hover:text-[#d0a91a] transition-colors">
+                <span className="flex items-center gap-2 text-xs text-white/80 font-bold mb-2 tracking-widest uppercase">
+                  <Phone className="w-4 h-4" /> Telefón
+                </span>
+                <a href="tel:+421900000000" className="font-black text-2xl tracking-tight hover:text-white/80 transition-colors">
                   +421 900 000 000
                 </a>
               </div>
@@ -67,55 +76,69 @@ export default function HomePage() {
 
         </div>
 
-        {/* SEKCIA STRAVA – made more prominent and modern */}
+        {/* SEKCIA STRAVA */}
         <section id="strava" className="scroll-mt-32">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-4 h-4 bg-[#d0a91a] rounded-full"></div>
-              <h2 className="text-4xl font-bold tracking-tight text-[#3E2E48]">
-                Dnešný Jedálniček
-              </h2>
+          
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
+            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-[#3E2E48] flex items-center gap-4">
+              <div className="w-3 h-3 bg-[#d0a91a] rounded-full shadow-sm"></div>
+              Dnešný Jedálniček
+            </h2>
+            <div className="flex items-center gap-2 bg-white text-[#d0a91a] px-6 py-2.5 rounded-2xl text-sm font-bold border border-[#3E2E48]/5 shadow-[0_4px_14px_rgba(62,46,72,0.03)]">
+              <CalendarDays className="w-4 h-4" strokeWidth={2.5} /> 
+              Štvrtok • 9. apríla
             </div>
-            <span className="bg-white text-[#d0a91a] px-8 py-3 rounded-3xl text-base font-bold tracking-wider border border-[#d0a91a]/30 shadow-sm">
-              Pondelok • 4. apríla
-            </span>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
             {/* Desiata */}
-            <div className="bg-white border border-[#3E2E48]/10 rounded-3xl p-9 hover:border-[#d0a91a]/40 transition-all duration-300 group shadow-sm hover:shadow-2xl">
-              <div className="flex items-center gap-3 mb-6">
-                <span className="text-[#d0a91a] text-4xl">🥨</span>
-                <h3 className="text-[#3E2E48] font-bold text-2xl tracking-tight">Desiata</h3>
+            <div className="bg-white border border-[#3E2E48]/5 rounded-[28px] p-8 transition-all duration-300 hover:border-[#d0a91a]/30 shadow-[0_4px_20px_rgba(62,46,72,0.03)] hover:shadow-[0_8px_30px_rgba(62,46,72,0.06)] hover:-translate-y-1 flex flex-col">
+              <div className="flex items-center gap-4 mb-5">
+                <div className="p-3.5 bg-[#fcf7f3] rounded-2xl text-[#d0a91a]">
+                  <Coffee className="w-6 h-6" strokeWidth={2.5} />
+                </div>
+                <h3 className="text-[#3E2E48] font-black text-xl tracking-tight">Desiata</h3>
               </div>
-              <p className="font-medium text-[#3E2E48] text-xl leading-snug">Chlebík s mrkvovou nátierkou, bylinkový čaj</p>
+              <p className="font-medium text-[#3E2E48]/80 text-base leading-relaxed">
+                Chlebík s mrkvovou nátierkou, bylinkový čaj
+              </p>
             </div>
             
             {/* Obed */}
-            <div className="bg-white border border-[#3E2E48]/10 rounded-3xl p-9 hover:border-[#d0a91a]/40 transition-all duration-300 group shadow-sm hover:shadow-2xl">
-              <div className="flex items-center gap-3 mb-6">
-                <span className="text-[#d0a91a] text-4xl">🍲</span>
-                <h3 className="text-[#3E2E48] font-bold text-2xl tracking-tight">Obed</h3>
+            <div className="bg-white border border-[#3E2E48]/5 rounded-[28px] p-8 transition-all duration-300 hover:border-[#d0a91a]/30 shadow-[0_4px_20px_rgba(62,46,72,0.03)] hover:shadow-[0_8px_30px_rgba(62,46,72,0.06)] hover:-translate-y-1 flex flex-col">
+              <div className="flex items-center gap-4 mb-5">
+                <div className="p-3.5 bg-[#fcf7f3] rounded-2xl text-[#d0a91a]">
+                  <Utensils className="w-6 h-6" strokeWidth={2.5} />
+                </div>
+                <h3 className="text-[#3E2E48] font-black text-xl tracking-tight">Obed</h3>
               </div>
-              <p className="font-medium text-[#3E2E48] text-xl leading-snug">Zeleninová polievka, Kuracie rizoto so syrom a kyslou uhorkou</p>
+              <p className="font-medium text-[#3E2E48]/80 text-base leading-relaxed">
+                Zeleninová polievka, Kuracie rizoto so syrom a kyslou uhorkou
+              </p>
             </div>
             
             {/* Olovrant */}
-            <div className="bg-white border border-[#3E2E48]/10 rounded-3xl p-9 hover:border-[#d0a91a]/40 transition-all duration-300 group shadow-sm hover:shadow-2xl">
-              <div className="flex items-center gap-3 mb-6">
-                <span className="text-[#d0a91a] text-4xl">🍎</span>
-                <h3 className="text-[#3E2E48] font-bold text-2xl tracking-tight">Olovrant</h3>
+            <div className="bg-white border border-[#3E2E48]/5 rounded-[28px] p-8 transition-all duration-300 hover:border-[#d0a91a]/30 shadow-[0_4px_20px_rgba(62,46,72,0.03)] hover:shadow-[0_8px_30px_rgba(62,46,72,0.06)] hover:-translate-y-1 flex flex-col">
+              <div className="flex items-center gap-4 mb-5">
+                <div className="p-3.5 bg-[#fcf7f3] rounded-2xl text-[#d0a91a]">
+                  <Apple className="w-6 h-6" strokeWidth={2.5} />
+                </div>
+                <h3 className="text-[#3E2E48] font-black text-xl tracking-tight">Olovrant</h3>
               </div>
-              <p className="font-medium text-[#3E2E48] text-xl leading-snug">Ovocný tanier (jabĺčka, banány), cereálna tyčinka</p>
+              <p className="font-medium text-[#3E2E48]/80 text-base leading-relaxed">
+                Ovocný tanier (jabĺčka, banány), cereálna tyčinka
+              </p>
             </div>
+
           </div>
         </section>
 
       </main>
       
-      {/* Footer – cleaner */}
-      <footer className="py-16 text-center border-t border-[#3E2E48]/10 mt-auto bg-white">
-        <p className="text-[#3E2E48]/60 text-sm font-medium tracking-widest">
+      {/* Footer */}
+      <footer className="py-8 text-center mt-auto bg-white/50 border-t border-[#3E2E48]/5">
+        <p className="text-[#3E2E48]/40 text-xs font-bold tracking-widest uppercase">
           © 2026 EduKinder • MŠ Malí Objavitelia
         </p>
       </footer>
