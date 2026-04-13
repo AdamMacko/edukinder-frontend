@@ -5,6 +5,7 @@ import { Header } from "@/app/components/header/Header";
 import { ChatSidebar } from "@/app/components/chat/ChatSidebar";
 import { ChatArea } from "@/app/components/chat/ChatArea";
 import { NewMessageModal } from "@/app/components/chat/NewMessageModal";
+import { Plus } from "lucide-react"; // Odporúčam pridať ikonku
 import {
     deleteConversation,
     fetchConversations,
@@ -199,17 +200,23 @@ export default function ChatPage() {
     }
 
     return (
+        // Hlavný obal je prísne 100dvh a bráni scrollovaniu celej stránky
         <div className="h-[100dvh] bg-[#fcf7f3] flex flex-col overflow-hidden">
             <Header />
 
-            <div className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-6 min-h-0">
+            {/* Zjednotený responzívny kontajner. flex-1 mu povie: zaber zvyšok obrazovky */}
+            <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 min-h-0 flex flex-col">
+                
+                {/* Chybová hláška (s jemnou animáciou) */}
                 {err && (
-                    <div className="mb-4 rounded-2xl border border-[#f0caca] bg-[#fbe7e7] px-4 py-3 text-sm text-[#a94f4f]">
+                    <div className="mb-4 animate-in fade-in slide-in-from-top-2 rounded-2xl border border-[#f0caca] bg-[#fbe7e7] px-4 py-3 text-sm font-medium text-[#a94f4f] shadow-sm">
                         {err}
                     </div>
                 )}
 
-                <div className="w-full h-full flex rounded-[32px] overflow-hidden border border-white/70 bg-white/30 shadow-[0_20px_60px_rgba(62,46,72,0.08)] backdrop-blur-xl">
+                {/* Samotné chatovacie okno - zaberie celý zvyšný priestor kontajnera */}
+                <div className="flex-1 w-full flex rounded-[32px] overflow-hidden border border-white/70 bg-white/70 shadow-[0_20px_60px_rgba(62,46,72,0.08)] backdrop-blur-xl">
+                    
                     <ChatSidebar
                         conversations={convos}
                         activeId={activeChatId}
@@ -231,12 +238,14 @@ export default function ChatPage() {
                 </div>
             </div>
 
+            {/* Vylepšené FAB tlačidlo (Floating Action Button) s responzívnym umiestnením */}
             <button
                 type="button"
                 onClick={() => setNewOpen(true)}
-                className="fixed bottom-6 right-6 rounded-full bg-[#d0a91a] text-white px-5 py-3 font-semibold shadow-lg shadow-[#d0a91a]/25 hover:opacity-95"
+                className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 lg:bottom-12 lg:right-12 z-40 flex items-center gap-2 rounded-full bg-gradient-to-r from-[#d0a91a] to-[#e2c26a] text-white px-5 py-3.5 font-bold shadow-lg shadow-[#d0a91a]/30 transition-all hover:scale-[1.03] active:scale-[0.97]"
             >
-                Nová správa
+                <Plus className="w-5 h-5" strokeWidth={3} />
+                <span className="hidden sm:inline">Nová správa</span>
             </button>
 
             <NewMessageModal

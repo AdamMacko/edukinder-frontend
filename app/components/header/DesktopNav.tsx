@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { LayoutList, Users, Briefcase, Utensils, CalendarDays } from 'lucide-react';
-
+import { LayoutList, Users, Briefcase, Utensils, CalendarDays, Megaphone } from 'lucide-react';
 export const DesktopNav = () => {
   return (
     <nav className="hidden md:flex items-center gap-2 lg:gap-4 animate-in fade-in duration-500">
@@ -27,6 +26,12 @@ export const DesktopNav = () => {
       <Link href="/attendance" className="group relative px-5 py-2.5 rounded-full font-bold text-sm text-[#3E2E48]/80 transition-all hover:text-[#d0a91a]">
         <span className="relative flex items-center gap-2">
           <CalendarDays className="w-4 h-4" strokeWidth={2.5} /> Dochádzka
+        </span>
+      </Link>
+
+      <Link href="/announcements" className="group relative px-5 py-2.5 rounded-full font-bold text-sm text-[#3E2E48]/80 transition-all hover:text-[#d0a91a]">
+        <span className="relative flex items-center gap-2">
+          <Megaphone className="w-4 h-4" strokeWidth={2.5} /> Nástenka
         </span>
       </Link>
     </nav>

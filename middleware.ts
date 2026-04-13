@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Táto funkcia sa spustí pri každej požiadavke na chránenú trasu
+
 export function middleware(request: NextRequest) {
   // 1. Skúsime prečítať HTTP-Only cookies, ktoré nám poslal náš backend
   const accessToken = request.cookies.get('accessToken')?.value;
@@ -33,6 +34,7 @@ export const config = {
     '/employees/:path*',
     '/chat/:path*',
     '/lunch-checkout/:path*',
-    '/profile/:path*'
+    '/profile/:path*',
+    '/announcements/:path*'
   ],
 };
