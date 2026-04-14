@@ -28,7 +28,7 @@ function getInitials(name: string) {
 }
 
 function toDownloadUrl(pathOrUrl: string) {
-    const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5000";
+    const API_BASE = process.env.API_BASE ?? "http://localhost:5000";
     const p = pathOrUrl.trim();
     if (!p) return "#";
     if (p.startsWith("http://") || p.startsWith("https://")) return p;

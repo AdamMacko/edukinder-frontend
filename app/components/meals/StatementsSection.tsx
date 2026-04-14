@@ -1,4 +1,5 @@
 import { MealStatementStatus } from "@/lib/api/payments";
+import {ArrowDownToLine} from "lucide-react";
 
 type StatementItem = {
     id: number;
@@ -129,8 +130,9 @@ export function StatementsSection({
                                         Preplatok z minulého mesiaca
                                     </th>
                                     <th className="px-4 py-3 font-bold text-right">Na úhradu</th>
-                                    <th className="px-4 py-3 font-bold">Status</th>
-                                    <th className="px-4 py-3 font-bold">Platobné údaje</th>
+                                    <th className="px-4 py-3 font-bold ">Status</th>
+                                    <th className="px-4 py-3 font-bold text-middle">Platobné údaje</th>
+                                    <th className="px-4 py-3 font-bold"></th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -154,7 +156,7 @@ export function StatementsSection({
                                             <td className="px-4 py-3 text-right">
                                                 {formatMoney(item.totalToPay)}
                                             </td>
-                                            <td className="px-4 py-3">
+                                            <td className="px-4 py-3 text-right">
                           <span
                               className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClasses(
                                   item.status
@@ -175,6 +177,10 @@ export function StatementsSection({
                                                     Platobné údaje
                                                 </button>
                                             </td>
+                                            <td className="px-4 py-3 ">
+                                                <ArrowDownToLine />
+                                            </td>
+
                                         </tr>
                                     ))}
                                 </tbody>
