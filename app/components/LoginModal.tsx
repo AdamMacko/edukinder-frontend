@@ -9,7 +9,6 @@ type LoginModalProps = {
     onClose: () => void;
 };
 
-const API_BASE = "https://edu-kinder.onrender.com";
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     const [state, setState] = useState<State>("default");

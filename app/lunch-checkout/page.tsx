@@ -11,6 +11,14 @@ import { PaymentsTabs } from "@/app/components/meals/PaymentsTabs";
 import { StatementsSection } from "@/app/components/meals/StatementsSection";
 import { PaymentsHistorySection } from "@/app/components/meals/PaymentsHistorySection";
 import { PaymentQrModal } from "@/app/components/meals/PaymentQrModal";
+import { CancellationModeSwitch } from "@/app/components/meals/CancellationModeSwitch";
+import { RangeCancellationForm } from "@/app/components/meals/RangeCancellationForm";
+import { ClassPaymentsSection } from "@/app/components/meals/ClassPaymentsSection";
+import {
+    getTeacherClassMealStatements,
+    markTeacherMealStatementPaid,
+    type TeacherMealStatementItem,
+} from "@/lib/api/teacher-meals";
 import {
     getMealsAttendance,
     getMyChildren,
@@ -24,7 +32,7 @@ import {
     type MealStatementStatus,
 } from "@/lib/api/payments";
 
-type MainTab = "CANCELLATION" | "PAYMENTS" | "OVERVIEW";
+type MainTab = "CANCELLATION" | "PAYMENTS" | "OVERVIEW" | "CLASS_PAYMENTS";
 
 type Child = { id: string; name: string; color: string };
 
@@ -192,15 +200,164 @@ export default function MealsPage() {
     const [mealsPayments, setMealsPayments] = useState<ChildMealsPayments[]>([]);
     const [paymentsLoading, setPaymentsLoading] = useState(false);
     const [paymentsError, setPaymentsError] = useState<string | null>(null);
-
+    const [selectedWeekIndex, setSelectedWeekIndex] = useState(0);
+    const [cancellationMode, setCancellationMode] = useState<"calendar" | "range">("calendar");
+    const [teacherClassName, setTeacherClassName] = useState<string | null>(null);
+    const [teacherMonthItems, setTeacherMonthItems] = useState<TeacherMealStatementItem[]>([]);
+    const [teacherLoading, setTeacherLoading] = useState(false);
+    const [teacherError, setTeacherError] = useState<string | null>(null);
+    const [teacherSubmittingId, setTeacherSubmittingId] = useState<number | null>(null);
+    const currentMonthKey = `${ym.y}-${pad(ym.m + 1)}`;
+    const currentMonthLabel = `${MONTHS_SK[ym.m]} ${ym.y}`;
     const [qrModal, setQrModal] = useState<QrModalState>({
         open: false,
         childName: "",
         qrValue: "",
         details: undefined,
     });
+    function getWorkingDatesInRange(from: string, to: string) {
+        const dates: string[] = [];
+
+        const start = new Date(from);
+        const end = new Date(to);
+
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return dates;
+        if (start > end) return dates;
+
+        const d = new Date(start);
+
+        while (d <= end) {
+            const day = d.getDay();
+            if (day !== 0 && day !== 6) {
+                dates.push(keyOf(d));
+            }
+            d.setDate(d.getDate() + 1);
+        }
+
+        return dates;
+    }
+
+    async function handleRangeCancellation(payload: {
+        childId: string;
+        from: string;
+        to: string;
+        scope: "full_day" | "lunch";
+    }) {
+        const workingDates = getWorkingDatesInRange(payload.from, payload.to);
+
+        if (!workingDates.length) return;
+
+        const childId = payload.childId;
+
+        for (const dateKey of workingDates) {
+            const current = data[childId]?.[dateKey] ?? allTrue();
+
+            let nextMeals: Meals;
+
+            if (payload.scope === "full_day") {
+                nextMeals = {
+                    snack_am: false,
+                    lunch: false,
+                    snack_pm: false,
+                    full_day: false,
+                };
+            } else {
+                const snack_am = current.snack_am;
+                const snack_pm = current.snack_pm;
+                const lunch = false;
+
+                nextMeals = {
+                    snack_am,
+                    lunch,
+                    snack_pm,
+                    full_day: snack_am && lunch && snack_pm,
+                };
+            }
+
+            setData((prev) => {
+                const out = { ...prev };
+                if (!out[childId]) out[childId] = {};
+                out[childId] = {
+                    ...out[childId],
+                    [dateKey]: nextMeals,
+                };
+                return out;
+            });
+
+            await saveMealsAttendance({
+                date: dateKey,
+                entries: [
+                    {
+                        childId: Number(childId),
+                        meals: {
+                            snack_am: nextMeals.snack_am,
+                            lunch: nextMeals.lunch,
+                            snack_pm: nextMeals.snack_pm,
+                        },
+                    },
+                ],
+            });
+        }
+    }
 
     const [syIndex, setSyIndex] = useState(0);
+    const weeks = useMemo(() => buildWeeks(ym.y, ym.m), [ym]);
+
+    useEffect(() => {
+        if (activeMainTab !== "CLASS_PAYMENTS") return;
+
+        let alive = true;
+
+        (async () => {
+            try {
+                setTeacherLoading(true);
+                setTeacherError(null);
+
+                const result = await getTeacherClassMealStatements(currentMonthKey);
+
+                if (!alive) return;
+
+                setTeacherClassName(result.className);
+                setTeacherMonthItems(result.items);
+            } catch (err) {
+                console.error(err);
+                if (!alive) return;
+                setTeacherError(
+                    err instanceof Error
+                        ? err.message
+                        : "Nepodarilo sa načítať predpisy triedy."
+                );
+            } finally {
+                if (alive) setTeacherLoading(false);
+            }
+        })();
+
+        return () => {
+            alive = false;
+        };
+    }, [activeMainTab, currentMonthKey]);
+
+    useEffect(() => {
+        const today = new Date();
+        const isCurrentMonth =
+            today.getFullYear() === ym.y && today.getMonth() === ym.m;
+
+        if (!weeks.length) {
+            setSelectedWeekIndex(0);
+            return;
+        }
+
+        if (isCurrentMonth) {
+            const todayKey = keyOf(today);
+            const weekIndex = weeks.findIndex((week) =>
+                week.some((cell) => keyOf(cell.date) === todayKey)
+            );
+
+            setSelectedWeekIndex(weekIndex >= 0 ? weekIndex : 0);
+        } else {
+            setSelectedWeekIndex(0);
+        }
+    }, [ym, weeks]);
 
     useEffect(() => {
         const loadChildren = async () => {
@@ -230,6 +387,68 @@ export default function MealsPage() {
 
         loadChildren();
     }, []);
+
+    async function handleTeacherMarkPaid(item: TeacherMealStatementItem) {
+        try {
+            setTeacherSubmittingId(item.statementId);
+
+            const result = await markTeacherMealStatementPaid({
+                childId: item.childId,
+                month: currentMonthKey,
+            });
+
+            setTeacherMonthItems((prev) =>
+                prev.map((row) =>
+                    row.statementId === item.statementId
+                        ? {
+                            ...row,
+                            status: result.status,
+                            paidAt: result.paidAt,
+                        }
+                        : row
+                )
+            );
+
+            if (activeMainTab === "PAYMENTS") {
+                const refreshedStatements = await getMyMealStatements();
+
+                const byChild = new Map<number, ChildStatements>();
+
+                for (const s of refreshedStatements) {
+                    if (!byChild.has(s.childId)) {
+                        byChild.set(s.childId, {
+                            childId: s.childId,
+                            childName: s.childName,
+                            items: [],
+                        });
+                    }
+
+                    const bucket = byChild.get(s.childId)!;
+                    bucket.items.push({
+                        id: s.id,
+                        month: s.month,
+                        plannedDays: s.plannedDays,
+                        mealsAmount: Number(s.mealsAmount ?? 0),
+                        carryOverIn: Number(s.carryOverIn ?? 0),
+                        totalToPay: Number(s.totalToPay ?? 0),
+                        carryOverOut: Number(s.carryOverOut ?? 0),
+                        status: s.status,
+                        qrPayload: s.qrPayload ?? undefined,
+                        paymentDetails: s.paymentDetails,
+                    });
+                }
+
+                setStatements(Array.from(byChild.values()));
+            }
+        } catch (err) {
+            console.error(err);
+            setTeacherError(
+                err instanceof Error ? err.message : "Nepodarilo sa potvrdiť úhradu."
+            );
+        } finally {
+            setTeacherSubmittingId(null);
+        }
+    }
 
     useEffect(() => {
         if (!childrenList.length) return;
@@ -390,7 +609,7 @@ export default function MealsPage() {
         };
     }, [activeMainTab]);
 
-    const weeks = useMemo(() => buildWeeks(ym.y, ym.m), [ym]);
+
     const activeChild = childrenList.find((c) => c.id === activeChildId) ?? null;
 
     const schoolYears = useMemo(() => {
@@ -530,17 +749,38 @@ export default function MealsPage() {
                                         onChange={setActiveChildId}
                                     />
 
-                                    <CalendarGrid
-                                        weeks={weeks}
-                                        weekdays={WEEKDAYS}
-                                        activeChildId={activeChildId ?? ""}
-                                        activeChildName={activeChild?.name}
-                                        data={data}
-                                        monthLabel={`${MONTHS_SK[ym.m]} ${ym.y}`}
-                                        onPrevMonth={prevMonth}
-                                        onNextMonth={nextMonth}
-                                        onOpenDay={openDialog}
+                                    <CancellationModeSwitch
+                                        value={cancellationMode}
+                                        onChange={setCancellationMode}
                                     />
+
+                                    {cancellationMode === "calendar" ? (
+                                        <CalendarGrid
+                                            weeks={weeks}
+                                            weekdays={WEEKDAYS}
+                                            activeChildId={activeChildId ?? ""}
+                                            activeChildName={activeChild?.name}
+                                            data={data}
+                                            monthLabel={`${MONTHS_SK[ym.m]} ${ym.y}`}
+                                            onPrevMonth={prevMonth}
+                                            onNextMonth={nextMonth}
+                                            onOpenDay={openDialog}
+                                            selectedWeekIndex={selectedWeekIndex}
+                                            onPrevWeek={() =>
+                                                setSelectedWeekIndex((prev) => Math.max(prev - 1, 0))
+                                            }
+                                            onNextWeek={() =>
+                                                setSelectedWeekIndex((prev) => Math.min(prev + 1, weeks.length - 1))
+                                            }
+                                        />
+                                    ) : (
+                                        <RangeCancellationForm
+                                            childrenList={childrenList}
+                                            activeChildId={activeChildId ?? ""}
+                                            onChildChange={setActiveChildId}
+                                            onSubmit={handleRangeCancellation}
+                                        />
+                                    )}
                                 </>
                             )}
 
@@ -641,6 +881,47 @@ export default function MealsPage() {
                             />
                         </div>
                     )}
+
+                    {activeMainTab === "CLASS_PAYMENTS" && (
+                        <div className="overflow-hidden rounded-[32px] border border-white/70 bg-white/70 shadow-[0_20px_60px_rgba(62,46,72,0.08)] backdrop-blur-xl">
+                            <MealsHeader title="Úhrady triedy" />
+
+                            <div className="px-6 pt-6 sm:px-8">
+                                <div className="mb-4 flex justify-end">
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            type="button"
+                                            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#3E2E48]/10 bg-white text-lg shadow-sm transition hover:bg-[#faf7f4]"
+                                            onClick={prevMonth}
+                                        >
+                                            ‹
+                                        </button>
+                                        <div className="rounded-2xl bg-[#f8f5f2] px-4 py-2 font-bold shadow-inner">
+                                            {currentMonthLabel}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#3E2E48]/10 bg-white text-lg shadow-sm transition hover:bg-[#faf7f4]"
+                                            onClick={nextMonth}
+                                        >
+                                            ›
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <ClassPaymentsSection
+                                className={teacherClassName}
+                                monthLabel={currentMonthLabel}
+                                items={teacherMonthItems}
+                                loading={teacherLoading}
+                                error={teacherError}
+                                onMarkPaid={handleTeacherMarkPaid}
+                                submittingId={teacherSubmittingId}
+                            />
+                        </div>
+                    )}
+
                 </div>
 
                 <EditMealsModal

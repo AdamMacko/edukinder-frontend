@@ -28,9 +28,11 @@ function getInitials(name: string) {
 }
 
 function toDownloadUrl(pathOrUrl: string) {
-    const API_BASE = process.env.API_BASE ?? "http://localhost:5000";
+    const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
+
     const p = pathOrUrl.trim();
     if (!p) return "#";
+
     if (p.startsWith("http://") || p.startsWith("https://")) return p;
     if (p.startsWith("/")) return `${API_BASE}${p}`;
     return `${API_BASE}/${p}`;
@@ -176,7 +178,7 @@ export function ChatArea({
                                                 </div>
                                                 <a
                                                     className={`underline ${isMe ? "text-white" : "text-[#3E2E48]"}`}
-                                                    href={toDownloadUrl(msg.value)}
+                                                    href={`/api/chat/file/${msg.id}`}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                 >

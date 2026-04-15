@@ -18,29 +18,31 @@ export function ChildTabs({
     return (
         <div className="border-b border-[#3E2E48]/8 bg-white px-6 py-4 sm:px-8">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                <div className="flex flex-wrap items-center gap-2">
-                    {childrenList.map((child) => {
-                        const active = activeChildId === child.id;
+                <div className="overflow-x-auto">
+                    <div className="flex w-max items-center gap-2">
+                        {childrenList.map((child) => {
+                            const active = activeChildId === child.id;
 
-                        return (
-                            <button
-                                key={child.id}
-                                onClick={() => onChange(child.id)}
-                                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                                    active
-                                        ? "bg-[#3E2E48] text-white shadow-md"
-                                        : "border border-[#3E2E48]/10 bg-[#f8f5f2] text-[#3E2E48] hover:bg-[#f4efea]"
-                                }`}
-                            >
-                <span
-                    className={`h-2.5 w-2.5 rounded-full ${
-                        active ? "bg-white" : child.color
-                    }`}
-                />
-                                {child.name}
-                            </button>
-                        );
-                    })}
+                            return (
+                                <button
+                                    key={child.id}
+                                    onClick={() => onChange(child.id)}
+                                    className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                                        active
+                                            ? "bg-[#3E2E48] text-white shadow-md"
+                                            : "border border-[#3E2E48]/10 bg-[#f8f5f2] text-[#3E2E48] hover:bg-[#f4efea]"
+                                    }`}
+                                >
+                  <span
+                      className={`h-2.5 w-2.5 rounded-full ${
+                          active ? "bg-white" : child.color
+                      }`}
+                  />
+                                    {child.name}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
