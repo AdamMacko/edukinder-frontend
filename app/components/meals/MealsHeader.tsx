@@ -17,11 +17,6 @@ export function MealsHeader({ title }: MealsHeaderProps) {
                     </h1>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                    <button className="rounded-2xl border border-white/80 bg-white px-4 py-2.5 text-sm font-semibold shadow-sm transition hover:shadow-md">
-                        Export
-                    </button>
-                </div>
             </div>
         </div>
     );

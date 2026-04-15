@@ -10,6 +10,7 @@ type LoginModalProps = {
   onClose: () => void;
 };
 
+
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [state, setState] = useState<State>("default");
   const [email, setEmail] = useState("");

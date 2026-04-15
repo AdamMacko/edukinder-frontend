@@ -1,6 +1,6 @@
 "use client";
 
-type MealsMainTab = "CANCELLATION" | "PAYMENTS" | "OVERVIEW";
+type MealsMainTab = "CANCELLATION" | "PAYMENTS" | "OVERVIEW" | "CLASS_PAYMENTS";
 
 type MealsSubnavProps = {
     active: MealsMainTab;
@@ -46,6 +46,15 @@ export function MealsSubnav({ active, onChange }: MealsSubnavProps) {
             >
                 Prehľad platieb
             </button>
+
+            <button
+                type="button"
+                onClick={() => onChange("CLASS_PAYMENTS")}
+                className={`${baseItem} ${
+                    active === "CLASS_PAYMENTS" ? activeItem : inactiveItem
+                }`}
+            >
+                Úhrady triedy</button>
         </div>
     );
 }

@@ -1,4 +1,10 @@
+"use client";
+
+import { useState } from "react";
+import { ArrowDownToLine } from "lucide-react";
 import { MealStatementStatus } from "@/lib/api/payments";
+import { PaymentSlipPdfCard } from "@/app/components/meals/PaymentSlipPdfCard";
+import { downloadPaymentSlipFromElement } from "@/lib/utils/downloadPaymentSlip";
 
 type StatementItem = {
     id: number;
@@ -94,6 +100,42 @@ export function StatementsSection({
                                       activeSchoolYear,
                                       onOpenQr,
                                   }: StatementsSectionProps) {
+    const [pdfData, setPdfData] = useState<{
+        childName: string;
+        monthLabel: string;
+        qrValue: string;
+        details: {
+            recipientName: string;
+            iban: string;
+            vs: string;
+            amount: number;
+            note: string;
+        };
+    } | null>(null);
+
+    async function handleDownloadSlip(childName: string, item: StatementItem) {
+        if (!item.paymentDetails || !item.qrPayload) return;
+
+        setPdfData({
+            childName,
+            monthLabel: formatMonth(item.month),
+            qrValue: item.qrPayload!,
+            details: item.paymentDetails!,
+        });
+
+        // Dáme tomu 1 sekundu, aby useEffect vygeneroval base64 obrázok
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        try {
+            await downloadPaymentSlipFromElement(
+                "payment-slip-pdf-card",
+                `platobny-prikaz-${childName.replace(/\s+/g, '-')}.pdf`
+            );
+        } finally {
+            setPdfData(null);
+        }
+    }
+
     if (error) {
         return <div className="px-6 py-8 text-[#b15252] sm:px-8">{error}</div>;
     }
@@ -111,50 +153,52 @@ export function StatementsSection({
     }
 
     return (
-        <div className="space-y-6 px-6 pb-6 sm:px-8">
-            {statements.map((child) => (
-                <section key={child.childId}>
-                    <h2 className="mb-4 text-2xl font-black tracking-tight">
-                        {child.childName}
-                    </h2>
+        <>
+            <div className="space-y-6 px-6 pb-6 sm:px-8">
+                {statements.map((child) => (
+                    <section key={child.childId}>
+                        <h2 className="mb-4 text-2xl font-black tracking-tight">
+                            {child.childName}
+                        </h2>
 
-                    <div className="overflow-hidden rounded-[24px] border border-[#3E2E48]/8 bg-[#fcfaf8]">
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full text-sm">
-                                <thead className="bg-[#f4efea] text-left">
-                                <tr className="text-[#3E2E48]/70">
-                                    <th className="px-4 py-3 font-bold">Mesiac</th>
-                                    <th className="px-4 py-3 font-bold text-right">Suma</th>
-                                    <th className="px-4 py-3 font-bold text-right">
-                                        Preplatok z minulého mesiaca
-                                    </th>
-                                    <th className="px-4 py-3 font-bold text-right">Na úhradu</th>
-                                    <th className="px-4 py-3 font-bold">Status</th>
-                                    <th className="px-4 py-3 font-bold">Platobné údaje</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {child.items
-                                    .filter(
-                                        (item) =>
-                                            !activeSchoolYear ||
-                                            schoolYearLabelFromIso(item.month) === activeSchoolYear
-                                    )
-                                    .map((item) => (
-                                        <tr key={item.id} className="border-t border-[#3E2E48]/8">
-                                            <td className="px-4 py-3 font-semibold text-[#3E2E48]">
-                                                {formatMonth(item.month)}
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                {formatMoney(item.mealsAmount)}
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                {formatMoney(item.carryOverIn)}
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                {formatMoney(item.totalToPay)}
-                                            </td>
-                                            <td className="px-4 py-3">
+                        <div className="overflow-hidden rounded-[24px] border border-[#3E2E48]/8 bg-[#fcfaf8]">
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full text-sm">
+                                    <thead className="bg-[#f4efea] text-left">
+                                    <tr className="text-[#3E2E48]/70">
+                                        <th className="px-4 py-3 font-bold">Mesiac</th>
+                                        <th className="px-4 py-3 font-bold text-right">Suma</th>
+                                        <th className="px-4 py-3 font-bold text-right">
+                                            Preplatok z minulého mesiaca
+                                        </th>
+                                        <th className="px-4 py-3 font-bold text-right">Na úhradu</th>
+                                        <th className="px-4 py-3 font-bold">Status</th>
+                                        <th className="px-4 py-3 font-bold">Platobné údaje</th>
+                                        <th className="px-4 py-3 font-bold"></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {child.items
+                                        .filter(
+                                            (item) =>
+                                                !activeSchoolYear ||
+                                                schoolYearLabelFromIso(item.month) === activeSchoolYear
+                                        )
+                                        .map((item) => (
+                                            <tr key={item.id} className="border-t border-[#3E2E48]/8">
+                                                <td className="px-4 py-3 font-semibold text-[#3E2E48]">
+                                                    {formatMonth(item.month)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    {formatMoney(item.mealsAmount)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    {formatMoney(item.carryOverIn)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    {formatMoney(item.totalToPay)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
                           <span
                               className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClasses(
                                   item.status
@@ -162,27 +206,59 @@ export function StatementsSection({
                           >
                             {statusLabel(item.status)}
                           </span>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <button
-                                                    type="button"
-                                                    className="rounded-xl border border-[#3E2E48]/10 bg-white px-3 py-2 text-sm font-semibold transition hover:bg-[#f8f5f2]"
-                                                    onClick={() =>
-                                                        item.qrPayload &&
-                                                        onOpenQr(child.childName, item.qrPayload, item.paymentDetails)
-                                                    }
-                                                >
-                                                    Platobné údaje
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <button
+                                                        type="button"
+                                                        className="rounded-xl border border-[#3E2E48]/10 bg-white px-3 py-2 text-sm font-semibold transition hover:bg-[#f8f5f2]"
+                                                        onClick={() =>
+                                                            item.qrPayload &&
+                                                            onOpenQr(child.childName, item.qrPayload, item.paymentDetails)
+                                                        }
+                                                    >
+                                                        Platobné údaje
+                                                    </button>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => void handleDownloadSlip(child.childName, item)}
+                                                        className="text-[#3E2E48]/70 hover:text-[#d0a91a] transition disabled:opacity-40"
+                                                        aria-label="Stiahnuť platobný príkaz"
+                                                        disabled={!item.qrPayload || !item.paymentDetails}
+                                                    >
+                                                        <ArrowDownToLine />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
-                </section>
-            ))}
-        </div>
+                    </section>
+                ))}
+            </div>
+
+            {pdfData && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        opacity: 0,
+                        pointerEvents: "none",
+                        zIndex: -1,
+                    }}
+                >
+                    <PaymentSlipPdfCard
+                        childName={pdfData.childName}
+                        monthLabel={pdfData.monthLabel}
+                        qrValue={pdfData.qrValue}
+                        details={pdfData.details}
+                    />
+                </div>
+            )}
+        </>
     );
 }
