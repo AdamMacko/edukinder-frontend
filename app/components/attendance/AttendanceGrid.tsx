@@ -42,14 +42,13 @@ function getStatusTextClasses(status: AttendanceState) {
 }
 
 export function AttendanceGrid({
-                                   childrenList,
-                                   attendance,
-                                   onToggleStatus,
-                                   isLoading = false, // Prijímame isLoading s predvolenou hodnotou
-                               }: AttendanceGridProps) {
+    childrenList,
+    attendance,
+    onToggleStatus,
+    isLoading = false,
+}: AttendanceGridProps) {
     return (
         <div className="px-6 pb-6 sm:px-8 sm:pb-8">
-            {/* Nahradili sme pôvodný div komponentom SmoothTransition */}
             <SmoothTransition 
                 isLoading={isLoading} 
                 className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5"
@@ -61,7 +60,8 @@ export function AttendanceGrid({
                         <button
                             key={child.id}
                             onClick={() => onToggleStatus(child.id)}
-                            className={`min-h-[118px] rounded-[24px] border p-4 text-center transition-all duration-200 ${getStatusCardClasses(
+                            // TOTO SME ZMENILI: Pridané duration-300, ease-out a active:scale-[0.97]
+                            className={`min-h-[118px] rounded-[24px] border p-4 text-center transition-all duration-300 ease-out active:scale-[0.97] ${getStatusCardClasses(
                                 state
                             )}`}
                         >

@@ -1,5 +1,5 @@
 "use client";
-import { Header } from '../components/Header';
+import { Header } from "@/app/components/header/Header";
 import { useEffect, useMemo, useState } from "react";
 import { AttendanceHeader } from "../components/attendance/AttendanceHeader";
 import { AttendanceToolbar } from "../components/attendance/AttendanceToolbar";
@@ -135,18 +135,33 @@ export default function AttendancePage() {
         };
     }, [dateKey]);
 
-    const handleToggleStatus = async (childId: number) => {
+const handleToggleStatus = async (childId: number) => {
+        
+        const currentState = attendance[String(childId)] ?? "PRESENT";
+        const nextState: AttendanceState = 
+            currentState === "PRESENT" ? "ABSENT" : 
+            currentState === "ABSENT" ? "SICK" : "PRESENT";
+
+        // 2. Okamžite zmeníme UI, nečakáme na server! 
+        setAttendance((prev) => ({
+            ...prev,
+            [String(childId)]: nextState,
+        }));
+
+        // 3. Pošleme požiadavku na server "na pozadí"
         try {
             const result = await toggleAttendance(dateKey, childId);
 
-            setAttendance((prev) => ({
-                ...prev,
-                [String(result.attendance.childId)]: result.attendance.state,
-            }));
-
+            // Server nám potvrdil zmenu a vrátil Log záznam, tak ho len ticho pridáme do histórie
             setLogs((prev) => [result.log, ...prev]);
         } catch (err) {
             console.error(err);
+            // 4. ROLLBACK: Ak niečo zlyhalo (napr. vypadol internet), vrátime kartičke pôvodnú farbu
+            setAttendance((prev) => ({
+                ...prev,
+                [String(childId)]: currentState,
+            }));
+            // Tu by sa hodilo zobraziť nejaký error toast pre používateľa
         }
     };
 
@@ -175,58 +190,55 @@ export default function AttendancePage() {
     };
 
     return (
-        <>
-        
-        <Header />
-            <div className="min-h-screen bg-[#fcf7f3] text-[#3E2E48]">
-                <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                    <div className="overflow-hidden rounded-[32px] border border-white/70 bg-white/70 shadow-[0_20px_60px_rgba(62,46,72,0.08)] backdrop-blur-xl">
-                        <AttendanceHeader
-                            title="Denná dochádzka"
-                            onCreateReport={handleCreateMonthlyReport}
-                            reportLoading={reportLoading}
-                            disabled={!childrenList.length}
-                            isLoading={loading}
-                        />
+        <main className="min-h-[100dvh] bg-[#fcf7f3] text-[#3E2E48] flex flex-col pb-12 sm:pb-24">
+            <Header />
+            
+            {/* Zjednotený responzívny kontajner rovnako ako na Nástenke */}
+            <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+                <div className="overflow-hidden rounded-[32px] border border-white/70 bg-white/70 shadow-[0_20px_60px_rgba(62,46,72,0.08)] backdrop-blur-xl">
+                    <AttendanceHeader
+                        title="Denná dochádzka"
+                        onCreateReport={handleCreateMonthlyReport}
+                        reportLoading={reportLoading}
+                        disabled={!childrenList.length}
+                        isLoading={loading}
+                    />
 
-                        {error ? (
-                            <div className="px-6 py-8 text-[#b15252] sm:px-8">{error}</div>
-                        ) : !childrenList.length && !loading ? (
-                            // Pridaná podmienka !loading zabezpečí, že toto nepreblikne pri prvom načítaní dát
-                            <div className="px-6 py-8 sm:px-8">
-                                Nemáte priradenú žiadnu triedu alebo deti.
-                            </div>
-                        ) : (
-                            // Ak máme dáta (alebo sa práve načítavajú pre iný deň), vykreslíme komponenty a pošleme im stav
-                            <>
-                                <AttendanceToolbar
-                                    groupName={groupName}
-                                    presentCount={counts.present}
-                                    absentCount={counts.absent}
-                                    sickCount={counts.sick}
-                                    dayLabel={dayLabel}
-                                    onPrevDay={() => changeDay(-1)}
-                                    onNextDay={() => changeDay(1)}
-                                    isLoading={loading}
-                                />
+                    {error ? (
+                        <div className="px-6 py-8 text-[#b15252] sm:px-8">{error}</div>
+                    ) : !childrenList.length && !loading ? (
+                        <div className="px-6 py-8 sm:px-8">
+                            Nemáte priradenú žiadnu triedu alebo deti.
+                        </div>
+                    ) : (
+                        <>
+                            <AttendanceToolbar
+                                groupName={groupName}
+                                presentCount={counts.present}
+                                absentCount={counts.absent}
+                                sickCount={counts.sick}
+                                dayLabel={dayLabel}
+                                onPrevDay={() => changeDay(-1)}
+                                onNextDay={() => changeDay(1)}
+                                isLoading={loading}
+                            />
 
-                                <AttendanceGrid
-                                    childrenList={childrenList}
-                                    attendance={attendance}
-                                    onToggleStatus={handleToggleStatus}
-                                    isLoading={loading}
-                                />
+                            <AttendanceGrid
+                                childrenList={childrenList}
+                                attendance={attendance}
+                                onToggleStatus={handleToggleStatus}
+                                isLoading={loading}
+                            />
 
-                                <AttendanceHistoryTable
-                                    logs={logs}
-                                    dateLabel={dateKey}
-                                    isLoading={loading}
-                                />
-                            </>
-                        )}
-                    </div>
+                            <AttendanceHistoryTable
+                                logs={logs}
+                                dateLabel={dateKey}
+                                isLoading={loading}
+                            />
+                        </>
+                    )}
                 </div>
             </div>
-        </>
+        </main>
     );
 }

@@ -1,6 +1,5 @@
 "use client";
-
-import { Header } from "@/app/components/Header";
+import { Header } from "@/app/components/header/Header";
 import { useEffect, useMemo, useState } from "react";
 import { MealsSubnav } from "@/app/components/meals/MealsSubnav";
 import { MealsHeader } from "@/app/components/meals/MealsHeader";
