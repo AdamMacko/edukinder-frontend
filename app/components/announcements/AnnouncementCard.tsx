@@ -2,37 +2,47 @@
 
 import { useState } from "react";
 import { Heart, MessageCircle, Share2, Pin, MoreHorizontal, Globe, Users, Lock } from "lucide-react";
-import { AnnouncementMock, AnnouncementVisibility } from "@/app/announcements/mockData";
 import { AnnouncementComments } from "./AnnouncementComments";
+import { Announcement } from "@/lib/api/announcements"; // ZMENA 1: Správny typ z API
 
-export const AnnouncementCard = ({ data }: { data: AnnouncementMock }) => {
-    const [liked, setLiked] = useState(data.isLikedByMe || false);
+export const AnnouncementCard = ({ data }: { data: Announcement }) => {
+    // ZMENA 2: Backend nám posiela boolean v 'likedByMe' (namiesto isLikedByMe)
+    const [liked, setLiked] = useState(data.likedByMe || false);
     const [likesCount, setLikesCount] = useState(data.likesCount);
 
-  
     const [showComments, setShowComments] = useState(false);
 
     const handleLike = () => {
+        // TODO: Neskôr sem pridáme reálne volanie na backend: toggleAnnouncementLike(data.id)
         setLiked(!liked);
         setLikesCount(liked ? likesCount - 1 : likesCount + 1);
     };
 
-    const initial = data.author.firstName[0] + (data.author.lastName?.[0] || "");
+    // ZMENA 3: Ošetrenie chýbajúcich dát. Backend môže teoreticky poslať author = null
+    const authorFirstName = data.author?.firstName || "Neznámy";
+    const authorLastName = data.author?.lastName || "Používateľ";
+    const initial = authorFirstName[0] + (authorLastName[0] || "");
+    // Vytiahneme rolu ak existuje, inak dáme predvolenú
+    const authorRole = (data.author as any)?.role || "Učiteľ";
 
-    const renderVisibilityBadge = () => { 
+    // ZMENA 4: Prispôsobenie na backendové stringy pre viditeľnosť
+    const renderVisibilityBadge = () => {
         switch (data.visibility) {
-            case AnnouncementVisibility.CLASS:
+            case "SELECTED_CLASSES":
+                // ZMENA 5: Backend neposiela 'targetClass', ale pole 'audiences'
+                const className = data.audiences?.[0]?.className || "Vybraná trieda";
                 return (
                     <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#e3f0fb] text-[#2b74b1] text-[10px] font-black uppercase tracking-wider">
-                        <Users className="w-3 h-3" /> {data.targetClass || "Trieda"}
+                        <Users className="w-3 h-3" /> {className}
                     </span>
                 );
-            case AnnouncementVisibility.STAFF:
+            case "STAFF_ONLY":
                 return (
                     <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#fbe7e7] text-[#b15252] text-[10px] font-black uppercase tracking-wider">
                         <Lock className="w-3 h-3" /> Zamestnanci
                     </span>
                 );
+            case "ALL_USERS":
             default:
                 return (
                     <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#f4fbef] text-[#547a31] text-[10px] font-black uppercase tracking-wider">
@@ -45,7 +55,6 @@ export const AnnouncementCard = ({ data }: { data: AnnouncementMock }) => {
     return (
         <div className="relative bg-white rounded-[32px] p-5 sm:p-6 shadow-sm border border-[#3E2E48]/5 transition-all hover:shadow-md mb-4 group">
 
-            
             {data.pinned && (
                 <div className="flex items-center gap-2 mb-3 text-[#d0a91a] text-xs font-bold ml-12">
                     <Pin className="w-3.5 h-3.5 fill-[#d0a91a]" /> Pripnutý oznam
@@ -61,11 +70,11 @@ export const AnnouncementCard = ({ data }: { data: AnnouncementMock }) => {
                     <div className="flex justify-between items-start mb-1">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                             <span className="font-bold text-[#3E2E48] text-[15px] leading-tight">
-                                {data.author.firstName} {data.author.lastName}
+                                {authorFirstName} {authorLastName}
                             </span>
                             <div className="flex items-center gap-2">
                                 <span className="text-[#3E2E48]/50 text-xs hidden sm:inline">•</span>
-                                <span className="text-[#3E2E48]/50 text-xs">{data.author.role}</span>
+                                <span className="text-[#3E2E48]/50 text-xs">{authorRole}</span>
                                 {renderVisibilityBadge()}
                             </div>
                         </div>
@@ -97,7 +106,6 @@ export const AnnouncementCard = ({ data }: { data: AnnouncementMock }) => {
                             <span className="text-sm font-semibold">{likesCount > 0 && likesCount}</span>
                         </button>
 
-                       
                         <button
                             onClick={() => setShowComments(!showComments)}
                             className={`flex items-center gap-2 group/btn transition-colors ${showComments ? 'text-[#d0a91a]' : 'text-[#3E2E48]/50 hover:text-[#d0a91a]'}`}
@@ -106,7 +114,8 @@ export const AnnouncementCard = ({ data }: { data: AnnouncementMock }) => {
                                 <MessageCircle className={`w-4 h-4 ${showComments ? 'fill-[#d0a91a]/20' : ''}`} strokeWidth={2.5} />
                             </div>
                             <span className="text-sm font-semibold">
-                                {(data.comments?.length || data.commentsCount) > 0 && (data.comments?.length || data.commentsCount)}
+                                {/* ZMENA 6: Backend vracia len číslo, pole komentárov nenačítava hneď */}
+                                {data.commentsCount > 0 && data.commentsCount}
                             </span>
                         </button>
 
@@ -119,7 +128,7 @@ export const AnnouncementCard = ({ data }: { data: AnnouncementMock }) => {
 
                     {/* Podmienené vykreslenie komponentu komentárov */}
                     {showComments && (
-                        <AnnouncementComments initialComments={data.comments || []} />
+                        <AnnouncementComments announcementId={data.id} />
                     )}
 
                 </div>

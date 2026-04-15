@@ -1,27 +1,52 @@
-import { MOCK_ANNOUNCEMENTS } from "./mockData";
+"use client";
+
+import { useEffect, useState } from "react";
 import { AnnouncementCard } from "../components/announcements/AnnouncementCard";
 import { CreateAnnouncement } from "../components/announcements/CreateAnnouncement";
-import { Megaphone, Search } from "lucide-react";
+import { Megaphone, Search, Loader2 } from "lucide-react";
 import { Header } from "@/app/components/header/Header";
+import { fetchAnnouncements, type Announcement } from "@/lib/api/announcements";
 
 export default function AnnouncementsPage() {
-  const pinnedAnnouncements = MOCK_ANNOUNCEMENTS.filter(a => a.pinned);
-  const standardAnnouncements = MOCK_ANNOUNCEMENTS.filter(a => !a.pinned);
+  // Stavy pre reálne dáta z backendu
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Funkcia na stiahnutie dát, ktorú môžeme zavolať kedykoľvek
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchAnnouncements();
+      setAnnouncements(data);
+    } catch (err: any) {
+      setError(err.message || "Nepodarilo sa načítať nástenku.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Načítanie dát pri prvom otvorení stránky
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Rozdelenie oznamov
+  const pinnedAnnouncements = announcements.filter(a => a.pinned);
+  const standardAnnouncements = announcements.filter(a => !a.pinned);
 
   return (
     <main className="min-h-[100dvh] bg-[#fcf7f3] pb-12 sm:pb-24 flex flex-col">
       <Header />
       
-      {/* ZJEDNOTENÝ CONTAINER: 
-        Toto zabezpečí, že obsah bude vždy rovnako odsadený od okrajov ako Header.
-        Na mobile menší okraj (px-4), na tablete (px-6), na PC najväčší (px-8). 
-      */}
+      {/* ZJEDNOTENÝ CONTAINER */}
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 flex-1">
         
-        {/* GRID LAYOUT: Perfektné škálovanie pre mobily, tablety (iPad) aj PC */}
+        {/* GRID LAYOUT */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
-          {/* L'AVÝ/STREDOVÝ PANEL: Zaberie 8 z 12 stĺpcov na PC, na mobile/tablete celý priestor */}
+          {/* L'AVÝ/STREDOVÝ PANEL */}
           <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 w-full max-w-2xl mx-auto lg:max-w-none">
             
             <div className="mb-6 px-1 flex items-center justify-between">
@@ -33,34 +58,50 @@ export default function AnnouncementsPage() {
               </h1>
             </div>
 
-            {/* Vytvorenie príspevku */}
-            <CreateAnnouncement />
+            {/* Vytvorenie príspevku - prepojené na obnovenie nástenky */}
+            <CreateAnnouncement onCreated={loadData} />
 
-            {/* Príspevky (dynamická medzera - na mobile menšia, na PC väčšia) */}
-            <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
-              
-              {/* Najskôr pripnuté */}
-              {pinnedAnnouncements.map((post) => (
-                <AnnouncementCard key={`pinned-${post.id}`} data={post} />
-              ))}
-              
-              {/* Delič ak máme pripnuté aj bežné */}
-              {pinnedAnnouncements.length > 0 && standardAnnouncements.length > 0 && (
-                <div className="flex items-center gap-4 py-2 sm:py-4 px-2 opacity-40">
-                  <div className="flex-1 h-px bg-[#3E2E48]/20"></div>
-                  <span className="text-[10px] sm:text-xs font-bold text-[#3E2E48] uppercase tracking-widest">Najnovšie</span>
-                  <div className="flex-1 h-px bg-[#3E2E48]/20"></div>
-                </div>
-              )}
+            {/* STAVY NAČÍTAVANIA & CHYBY */}
+            {loading ? (
+              <div className="mt-8 flex flex-col items-center justify-center p-12 bg-white/50 rounded-[32px] border border-[#3E2E48]/5">
+                <Loader2 className="w-8 h-8 animate-spin text-[#d0a91a] mb-4" />
+                <p className="text-[#3E2E48]/50 font-bold text-sm">Načítavam príspevky...</p>
+              </div>
+            ) : error ? (
+              <div className="mt-8 p-8 bg-[#fbe7e7] border border-[#f0caca] rounded-[32px] text-center">
+                <p className="text-[#a94f4f] font-bold">{error}</p>
+              </div>
+            ) : announcements.length === 0 ? (
+               <div className="mt-8 p-12 bg-white/50 border border-[#3E2E48]/5 rounded-[32px] text-center">
+                 <p className="text-[#3E2E48]/40 font-bold">Zatiaľ tu nie sú žiadne oznamy.</p>
+               </div>
+            ) : (
+              /* Zoznam príspevkov */
+              <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+                
+                {/* Najskôr pripnuté */}
+                {pinnedAnnouncements.map((post) => (
+                  <AnnouncementCard key={`pinned-${post.id}`} data={post} />
+                ))}
+                
+                {/* Delič ak máme pripnuté aj bežné */}
+                {pinnedAnnouncements.length > 0 && standardAnnouncements.length > 0 && (
+                  <div className="flex items-center gap-4 py-2 sm:py-4 px-2 opacity-40">
+                    <div className="flex-1 h-px bg-[#3E2E48]/20"></div>
+                    <span className="text-[10px] sm:text-xs font-bold text-[#3E2E48] uppercase tracking-widest">Najnovšie</span>
+                    <div className="flex-1 h-px bg-[#3E2E48]/20"></div>
+                  </div>
+                )}
 
-              {/* Ostatné príspevky */}
-              {standardAnnouncements.map((post) => (
-                <AnnouncementCard key={post.id} data={post} />
-              ))}
-            </div>
+                {/* Ostatné príspevky */}
+                {standardAnnouncements.map((post) => (
+                  <AnnouncementCard key={post.id} data={post} />
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* PRAVÝ PANEL: Widgety (zobrazené len na PC - lg a vyššie) */}
+          {/* PRAVÝ PANEL: Widgety */}
           <div className="hidden lg:block lg:col-span-4 xl:col-span-4 2xl:col-span-3">
             <div className="sticky top-28 space-y-6">
               

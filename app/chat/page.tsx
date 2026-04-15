@@ -200,7 +200,7 @@ export default function ChatPage() {
     }
 
     return (
-        // Hlavný obal je prísne 100dvh a bráni scrollovaniu celej stránky
+        
         <div className="h-[100dvh] bg-[#fcf7f3] flex flex-col overflow-hidden">
             <Header />
 

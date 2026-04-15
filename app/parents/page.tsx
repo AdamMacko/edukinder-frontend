@@ -3,22 +3,62 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Header } from "@/app/components/header/Header";
 import { ParentCard } from "../components/parents/ParentCard";
-import { Search, UserPlus, ArrowUpDown } from "lucide-react";
-import { MOCK_PARENTS } from "./mockData"; // Import statických dát
-
+import { Search, UserPlus, ArrowUpDown, Loader2 } from "lucide-react";
+import { fetchParents, deleteParent, type Parent } from "@/lib/api/parents";
+import { AddParentModal } from "../components/parents/AddParentModal";
 export default function ParentsPage() {
+  const [parents, setParents] = useState<Parent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [openMenu, setOpenMenu] = useState<number | null>(null);
   const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  // 1. Načítanie dát pri štarte
+  const loadParents = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchParents();
+      setParents(data);
+    } catch (err: any) {
+      setError(err.message || "Nastala chyba pri načítavaní dát.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Klientske filtrovanie
+  useEffect(() => {
+    loadParents();
+  }, []);
+
+  // 2. Mazanie rodiča
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Naozaj chcete vymazať tohto rodiča? Tento krok sa nedá vrátiť.")) return;
+
+    try {
+      await deleteParent(id);
+      // Odstránime z lokálneho stavu bez nutnosti znovu načítať celý zoznam
+      setParents(prev => prev.filter(p => p.id !== id));
+      setOpenMenu(null);
+    } catch (err: any) {
+      alert(err.message || "Chyba pri mazaní.");
+    }
+  };
+
+  // 3. Klientske filtrovanie napojené na reálne dáta
   const filteredParents = useMemo(() => {
     const lower = searchTerm.toLowerCase();
-    return MOCK_PARENTS.filter(p => 
-      `${p.firstName} ${p.lastName} ${p.email}`.toLowerCase().includes(lower) ||
-      p.children.some(c => c.toLowerCase().includes(lower))
-    );
-  }, [searchTerm]);
+    return parents.filter(p => {
+      // Pripravíme si text na porovnanie (meno, priezvisko, email)
+      const parentInfo = `${p.firstName || ""} ${p.lastName || ""} ${p.email || ""}`.toLowerCase();
+      // Pripravíme si mená detí
+      const childrenInfo = p.children.map(c => `${c.firstName} ${c.lastName}`).join(" ").toLowerCase();
+
+      return parentInfo.includes(lower) || childrenInfo.includes(lower);
+    });
+  }, [searchTerm, parents]);
 
   // Click outside menu logic
   useEffect(() => {
@@ -39,7 +79,7 @@ export default function ParentsPage() {
       <Header />
 
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        
+
         {/* TOP SECTION */}
         <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div>
@@ -50,8 +90,9 @@ export default function ParentsPage() {
               Správa prístupov a prehľad priradených detí.
             </p>
           </div>
-          
+
           <button
+            onClick={() => setIsAddModalOpen(true)}
             className="group flex items-center justify-center gap-2 rounded-2xl bg-[#d0a91a] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#d0a91a]/20 transition-all hover:opacity-90 hover:-translate-y-0.5"
           >
             <UserPlus className="w-5 h-5" />
@@ -78,8 +119,17 @@ export default function ParentsPage() {
           </div>
         </div>
 
-        {/* GRID S KARTAMI */}
-        {filteredParents.length === 0 ? (
+        {/* GRID S KARTAMI / NAČÍTANIE / CHYBA */}
+        {loading ? (
+          <div className="rounded-[32px] border border-[#3E2E48]/5 bg-white/50 p-20 flex flex-col items-center justify-center text-[#3E2E48]/40">
+            <Loader2 className="w-8 h-8 animate-spin mb-4 text-[#d0a91a]" />
+            <p className="font-bold">Načítavam dáta rodičov...</p>
+          </div>
+        ) : error ? (
+          <div className="rounded-[32px] border border-[#f0caca] bg-[#fbe7e7] p-8 text-center text-[#a94f4f] font-bold">
+            {error}
+          </div>
+        ) : filteredParents.length === 0 ? (
           <div className="rounded-[32px] border border-[#3E2E48]/5 bg-white/50 p-20 text-center text-[#3E2E48]/40 font-bold">
             Nenašli sa žiadni rodičia
           </div>
@@ -88,18 +138,27 @@ export default function ParentsPage() {
             {filteredParents.map((parent) => (
               <ParentCard
                 key={parent.id}
-                parent={parent}
+
+                parent={{
+                  ...parent,
+
+                  children: parent.children.map(c => `${c.firstName} ${c.lastName}`)
+                }}
                 isMenuOpen={openMenu === parent.id}
                 onMenuToggle={() => setOpenMenu(openMenu === parent.id ? null : parent.id)}
                 onEdit={() => alert(`Upraviť rodiča: ${parent.firstName}`)}
-                onDelete={() => alert(`Zmazať rodiča: ${parent.firstName}`)}
-                onViewChildren={() => alert(`Deti: ${parent.children.join(', ')}`)}
+                onDelete={() => handleDelete(parent.id)}
+                onViewChildren={() => alert(`Deti: ${parent.children.map(c => c.firstName).join(', ')}`)}
                 menuRef={(el: any) => { rowRefs.current[parent.id] = el; }}
               />
             ))}
           </div>
         )}
       </div>
+      <AddParentModal 
+      isOpen={isAddModalOpen} 
+      onClose={() => setIsAddModalOpen(false)} 
+    />
     </div>
   );
 }

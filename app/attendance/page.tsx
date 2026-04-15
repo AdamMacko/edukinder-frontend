@@ -135,18 +135,33 @@ export default function AttendancePage() {
         };
     }, [dateKey]);
 
-    const handleToggleStatus = async (childId: number) => {
+const handleToggleStatus = async (childId: number) => {
+        
+        const currentState = attendance[String(childId)] ?? "PRESENT";
+        const nextState: AttendanceState = 
+            currentState === "PRESENT" ? "ABSENT" : 
+            currentState === "ABSENT" ? "SICK" : "PRESENT";
+
+        // 2. Okamžite zmeníme UI, nečakáme na server! 
+        setAttendance((prev) => ({
+            ...prev,
+            [String(childId)]: nextState,
+        }));
+
+        // 3. Pošleme požiadavku na server "na pozadí"
         try {
             const result = await toggleAttendance(dateKey, childId);
 
-            setAttendance((prev) => ({
-                ...prev,
-                [String(result.attendance.childId)]: result.attendance.state,
-            }));
-
+            // Server nám potvrdil zmenu a vrátil Log záznam, tak ho len ticho pridáme do histórie
             setLogs((prev) => [result.log, ...prev]);
         } catch (err) {
             console.error(err);
+            // 4. ROLLBACK: Ak niečo zlyhalo (napr. vypadol internet), vrátime kartičke pôvodnú farbu
+            setAttendance((prev) => ({
+                ...prev,
+                [String(childId)]: currentState,
+            }));
+            // Tu by sa hodilo zobraziť nejaký error toast pre používateľa
         }
     };
 
