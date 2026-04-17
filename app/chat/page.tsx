@@ -204,19 +204,28 @@ export default function ChatPage() {
         <div className="h-[100dvh] bg-[#fcf7f3] flex flex-col overflow-hidden">
             <Header />
 
-            {/* Zjednotený responzívny kontajner. flex-1 mu povie: zaber zvyšok obrazovky */}
             <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 min-h-0 flex flex-col">
-                
-                {/* Chybová hláška (s jemnou animáciou) */}
+
+                <div className="mb-4 flex items-center justify-between gap-4">
+                    <h1 className="text-3xl font-extrabold text-[#3E2E48]">Správy</h1>
+
+                    <button
+                        type="button"
+                        onClick={() => setNewOpen(true)}
+                        className="z-40 flex items-center gap-2 rounded-full bg-gradient-to-r from-[#d0a91a] to-[#e2c26a] text-white px-5 py-3 font-bold shadow-lg shadow-[#d0a91a]/30 transition-all hover:scale-[1.03] active:scale-[0.97] shrink-0"
+                    >
+                        <Plus className="w-5 h-5" strokeWidth={3} />
+                        <span>Nová správa</span>
+                    </button>
+                </div>
+
                 {err && (
                     <div className="mb-4 animate-in fade-in slide-in-from-top-2 rounded-2xl border border-[#f0caca] bg-[#fbe7e7] px-4 py-3 text-sm font-medium text-[#a94f4f] shadow-sm">
                         {err}
                     </div>
                 )}
 
-                {/* Samotné chatovacie okno - zaberie celý zvyšný priestor kontajnera */}
                 <div className="flex-1 w-full flex rounded-[32px] overflow-hidden border border-white/70 bg-white/70 shadow-[0_20px_60px_rgba(62,46,72,0.08)] backdrop-blur-xl">
-                    
                     <ChatSidebar
                         conversations={convos}
                         activeId={activeChatId}
@@ -237,16 +246,6 @@ export default function ChatPage() {
                     />
                 </div>
             </div>
-
-            {/* Vylepšené FAB tlačidlo (Floating Action Button) s responzívnym umiestnením */}
-            <button
-                type="button"
-                onClick={() => setNewOpen(true)}
-                className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 lg:bottom-12 lg:right-12 z-40 flex items-center gap-2 rounded-full bg-gradient-to-r from-[#d0a91a] to-[#e2c26a] text-white px-5 py-3.5 font-bold shadow-lg shadow-[#d0a91a]/30 transition-all hover:scale-[1.03] active:scale-[0.97]"
-            >
-                <Plus className="w-5 h-5" strokeWidth={3} />
-                <span className="hidden sm:inline">Nová správa</span>
-            </button>
 
             <NewMessageModal
                 open={newOpen}
